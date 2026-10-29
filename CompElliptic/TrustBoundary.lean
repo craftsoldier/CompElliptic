@@ -11,6 +11,7 @@ import CompElliptic.Hashing.WeilSupport
 import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
+import CompElliptic.Fields.BLS12_381
 import CompElliptic.Fields.Sqrt
 import CompElliptic.Meta.AxiomCheck
 
@@ -25,7 +26,8 @@ passing silently. The declarations are grouped by trust tier:
 
 * **General theorems** rest only on `propext` / `Classical.choice` / `Quot.sound`. A quantified
   result has no independent spot-check, so it must not reach beyond Lean's standard axioms.
-* **Concrete closed facts checked by the kernel** (Pratt primality certificates) add nothing beyond
+* **Concrete closed facts checked by the kernel** (Pratt primality certificates, and the order of
+  the BLS12-381 scalar field's Tonelli–Shanks root of unity, `bls12_381Scalar`) add nothing beyond
   those same axioms: the kernel evaluates them directly, trusting only its GMP bignum arithmetic
   (which even ordinary `decide` relies on and which axiom collection does not surface).
 * **Concrete closed facts trusting the compiler** (`native_decide`, marked `+native(...)`) each add
@@ -53,10 +55,12 @@ assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_three_
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
-/-! ## Concrete closed facts checked by the kernel (Pratt certificates) — standard axioms only -/
+/-! ## Concrete closed facts checked by the kernel — standard axioms only -/
 
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_BASE_is_prime
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_SCALAR_is_prime
+assert_axioms CompElliptic.Fields.BLS12_381.BLS12_381_SCALAR_is_prime
+assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 

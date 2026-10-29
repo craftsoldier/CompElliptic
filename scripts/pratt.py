@@ -5,7 +5,8 @@
 # Authors: Daira-Emma Hopwood
 """
 Common Lucas/Pratt primality-certificate machinery for the `CompElliptic/Fields/*.lean` field
-generators (`gen_pasta.py`, `gen_jubjub.py`), in the style of CompPoly's `Fields/Secp256k1.lean`.
+generators (`gen_pasta.py`, `gen_jubjub.py`, `gen_bls12_381.py`), in the style of CompPoly's
+`Fields/Secp256k1.lean`.
 
 Factorization and primitive-root search are done by PARI/GP (fast); the emitted Lean uses
 `(by pratt)` for small prime leaves (<= PRATT_MAX, where the in-Lean Pollard-rho factoring is

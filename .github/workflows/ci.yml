@@ -70,8 +70,11 @@ jobs:
         run: |
           python3 scripts/gen_pasta.py > CompElliptic/Fields/Pasta.lean
           python3 scripts/gen_jubjub.py > CompElliptic/Fields/Jubjub.lean
+          python3 scripts/gen_bls12_381.py > CompElliptic/Fields/BLS12_381.lean
       - name: Fail if the regenerated files differ from the committed ones
-        run: git diff --exit-code CompElliptic/Fields/Pasta.lean CompElliptic/Fields/Jubjub.lean
+        run: |
+          git diff --exit-code CompElliptic/Fields/Pasta.lean CompElliptic/Fields/Jubjub.lean \
+            CompElliptic/Fields/BLS12_381.lean
 
   sage-checks:
     name: sage checks - Vélu certificates and Weil-derivation identities
