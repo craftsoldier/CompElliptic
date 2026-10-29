@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.Curves.JubjubOrder
 import CompElliptic.Hashing.PastaSSWU
 import CompElliptic.Hashing.TwoTermUniformity
 import CompElliptic.Hashing.WeilSupport
@@ -26,10 +27,11 @@ passing silently. The declarations are grouped by trust tier:
 
 * **General theorems** rest only on `propext` / `Classical.choice` / `Quot.sound`. A quantified
   result has no independent spot-check, so it must not reach beyond Lean's standard axioms.
-* **Concrete closed facts checked by the kernel** (Pratt primality certificates, and the order of
-  the BLS12-381 scalar field's Tonelli–Shanks root of unity, `bls12_381Scalar`) add nothing beyond
-  those same axioms: the kernel evaluates them directly, trusting only its GMP bignum arithmetic
-  (which even ordinary `decide` relies on and which axiom collection does not surface).
+* **Concrete closed facts checked by the kernel** (Pratt primality certificates, the order of the
+  BLS12-381 scalar field's Tonelli–Shanks root of unity, `bls12_381Scalar`, and the Jubjub order
+  witnesses, each a chain of slope certificates) add nothing beyond those same axioms: the kernel
+  evaluates them directly, trusting only its GMP bignum arithmetic (which even ordinary `decide`
+  relies on and which axiom collection does not surface).
 * **Concrete closed facts trusting the compiler** (`native_decide`, marked `+native(...)`) each add
   a per-declaration compiler-trust axiom. This is the whole compiler-trust surface, confined to
   falsifiable numeric facts about the Pasta fields and curves — chiefly the order of the
@@ -52,6 +54,13 @@ open CompElliptic.Meta
 assert_axioms CompElliptic.CurveOrder.card_fibre_le_two
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_two_mul
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_three_mul
+assert_axioms CompElliptic.CurveOrder.card_eq_card_onCurve_add_one
+assert_axioms CompElliptic.CurveOrder.card_add_card_twist
+assert_axioms CompElliptic.CurveOrder.card_eq_of_twist_witness
+assert_axioms CompElliptic.CurveOrder.card_torsionBy_eq
+assert_axioms CompElliptic.CurveOrder.eq_torsionBy_of_card_eq
+assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.runChain_sound
+assert_computable CompElliptic.CurveForms.ShortWeierstrass.runChain
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
@@ -61,6 +70,24 @@ assert_axioms CompElliptic.Fields.Pasta.PALLAS_BASE_is_prime
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_SCALAR_is_prime
 assert_axioms CompElliptic.Fields.BLS12_381.BLS12_381_SCALAR_is_prime
 assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
+
+/-! ## The Jubjub curve — standard axioms only
+
+The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin. -/
+
+assert_axioms CompElliptic.Curves.Jubjub.d_eq
+assert_axioms CompElliptic.Curves.Jubjub.montA_eq
+assert_axioms CompElliptic.Curves.Jubjub.a₄_eq
+assert_axioms CompElliptic.Curves.Jubjub.a₆_eq
+assert_axioms CompElliptic.Curves.Jubjub.onCurve_iff_mont
+assert_axioms CompElliptic.Curves.Jubjub.r_nsmul_Gpt
+assert_axioms CompElliptic.Curves.Jubjub.four_nsmul_Tpt
+assert_axioms CompElliptic.Curves.Jubjub.four_nsmul_Tpt_ne_zero
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_Tpt
+assert_axioms CompElliptic.Curves.Jubjub.Wpt_witness
+assert_axioms CompElliptic.Curves.Jubjub.card_eq
+assert_axioms CompElliptic.Curves.Jubjub.card_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.eq_primeOrderSubgroup
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
