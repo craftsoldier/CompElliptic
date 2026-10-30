@@ -14,6 +14,7 @@ import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.BLS12_381
 import CompElliptic.Fields.Sqrt
+import CompElliptic.CurveForms.CtEdwards
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -61,6 +62,9 @@ assert_axioms CompElliptic.CurveOrder.card_torsionBy_eq
 assert_axioms CompElliptic.CurveOrder.eq_torsionBy_of_card_eq
 assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.runChain_sound
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.runChain
+assert_axioms CompElliptic.CurveForms.CtEdwards.complete
+assert_axioms CompElliptic.CurveForms.CtEdwards.onCurve_add
+assert_axioms CompElliptic.CurveForms.CtEdwards.add_assoc
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
@@ -106,6 +110,7 @@ the plain-`def` check certifies the enumeration itself is compiled code, not con
 choice. -/
 
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.instFintypeSWPoint +choice
+assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.instFintype +choice
 assert_computable CompElliptic.Curves.Pasta.Pallas.fintypePoints +choice
 assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
 
