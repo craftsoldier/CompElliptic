@@ -13,7 +13,7 @@ import CompElliptic.CurveOrder
 The Jubjub curve group has order `8·r_𝕁`, and has a unique subgroup of order `r_𝕁`, the
 counterpart of `𝕁⁽ʳ⁾` in the Zcash Protocol Specification §5.4.9.3 "Jubjub". Here `r_𝕁` is
 `JUBJUB_SCALAR_CARD`, the prime written `ℓ` in `Fields/Jubjub.lean`, and `q` is the size of the
-base field. Both facts are about the short-Weierstrass model `Jubjub.curve`; transferring them to
+base field. Both facts are about the short-Weierstrass model `Jubjub.SW.curve`; transferring them to
 the twisted Edwards curve needs the group isomorphism, which is not defined here.
 
 No point counting is needed, and no Hasse bound:
@@ -26,7 +26,7 @@ Every witness is checked by the kernel (`Curves/JubjubWitnesses.lean`), so nothi
 `native_decide`.
 -/
 
-namespace CompElliptic.Curves.Jubjub
+namespace CompElliptic.Curves.Jubjub.SW
 
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.CurveOrder
   CompElliptic.Fields.BLS12_381 CompElliptic.Fields.Jubjub
@@ -61,4 +61,4 @@ theorem eq_primeOrderSubgroup (K : AddSubgroup (SWPoint curve))
     (hK : Nat.card K = JUBJUB_SCALAR_CARD) : K = primeOrderSubgroup :=
   eq_torsionBy_of_card_eq JUBJUB_SCALAR_is_prime card_eq (by decide) K hK
 
-end CompElliptic.Curves.Jubjub
+end CompElliptic.Curves.Jubjub.SW

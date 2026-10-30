@@ -59,6 +59,8 @@ theorem montA_eq : montA = 2 * (a + d) / (a - d) := by
   unfold montA a
   decide
 
+namespace SW
+
 /-- The short-Weierstrass coefficient `a₄ = -559295147`. -/
 def a₄ : BLS12381ScalarField := -559295147
 
@@ -109,5 +111,7 @@ def twist : SWCurve BLS12381ScalarField where
   B := 7^3 * a₆
   IsElliptic := by rw [isUnit_iff_ne_zero]; decide
   B_nonzero := by decide
+
+end SW
 
 end CompElliptic.Curves.Jubjub

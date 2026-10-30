@@ -77,17 +77,17 @@ The curve's parameters, its order witnesses, and the order and prime-order subgr
 
 assert_axioms CompElliptic.Curves.Jubjub.d_eq
 assert_axioms CompElliptic.Curves.Jubjub.montA_eq
-assert_axioms CompElliptic.Curves.Jubjub.a₄_eq
-assert_axioms CompElliptic.Curves.Jubjub.a₆_eq
-assert_axioms CompElliptic.Curves.Jubjub.onCurve_iff_mont
-assert_axioms CompElliptic.Curves.Jubjub.r_nsmul_Gpt
-assert_axioms CompElliptic.Curves.Jubjub.four_nsmul_Tpt
-assert_axioms CompElliptic.Curves.Jubjub.four_nsmul_Tpt_ne_zero
-assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_Tpt
-assert_axioms CompElliptic.Curves.Jubjub.Wpt_witness
-assert_axioms CompElliptic.Curves.Jubjub.card_eq
-assert_axioms CompElliptic.Curves.Jubjub.card_primeOrderSubgroup
-assert_axioms CompElliptic.Curves.Jubjub.eq_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.SW.a₄_eq
+assert_axioms CompElliptic.Curves.Jubjub.SW.a₆_eq
+assert_axioms CompElliptic.Curves.Jubjub.SW.onCurve_iff_mont
+assert_axioms CompElliptic.Curves.Jubjub.SW.r_nsmul_Gpt
+assert_axioms CompElliptic.Curves.Jubjub.SW.four_nsmul_Tpt
+assert_axioms CompElliptic.Curves.Jubjub.SW.four_nsmul_Tpt_ne_zero
+assert_axioms CompElliptic.Curves.Jubjub.SW.eight_nsmul_Tpt
+assert_axioms CompElliptic.Curves.Jubjub.SW.Wpt_witness
+assert_axioms CompElliptic.Curves.Jubjub.SW.card_eq
+assert_axioms CompElliptic.Curves.Jubjub.SW.card_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.SW.eq_primeOrderSubgroup
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
