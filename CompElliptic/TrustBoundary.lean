@@ -65,6 +65,8 @@ assert_computable CompElliptic.CurveForms.ShortWeierstrass.runChain
 assert_axioms CompElliptic.CurveForms.CtEdwards.complete
 assert_axioms CompElliptic.CurveForms.CtEdwards.onCurve_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.add_assoc
+assert_axioms CompElliptic.CurveForms.CtEdwards.u_eq_zero_iff
+assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.two_nsmul_eq_zero_iff
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 

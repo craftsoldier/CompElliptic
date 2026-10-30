@@ -243,6 +243,56 @@ theorem add_assoc {a d : F} [Fact (IsComplete a d)] {p q r : F × F}
       (by linear_combination e₄u) (by linear_combination e₄v) (by linear_combination e₅u)
       (by linear_combination e₅v)
 
+/-! ## Exceptional points
+
+The specification relies on these facts about points with a zero coordinate or of order `2`. -/
+
+/-- The only points with `u = 0` are `(0, 1)` and `(0, -1)`; equivalently, `u = 0` exactly when
+`v = ±1`. Zcash Protocol Specification [§A.3.3.3 "ctEdwards ↔ Montgomery
+conversion"](https://zips.z.cash/protocol/protocol.pdf#cctconversion), exceptional points
+(ctEdwards → Montgomery); `v = ±1` forces `u = 0` because `a ≠ d`. -/
+theorem u_eq_zero_iff {a d : F} [Fact (IsComplete a d)] {u v : F} (h : OnCurve a d (u, v)) :
+    u = 0 ↔ v = 1 ∨ v = -1 := by
+  simp only [OnCurve] at h
+  constructor
+  · rintro rfl
+    have hv : (v - 1) * (v + 1) = 0 := by linear_combination h
+    rcases mul_eq_zero.mp hv with h1 | h1
+    · exact Or.inl (by linear_combination h1)
+    · exact Or.inr (by linear_combination h1)
+  · intro hv
+    have hv2 : v ^ 2 = 1 := by rcases hv with rfl | rfl <;> ring
+    have hu : (a - d) * u ^ 2 = 0 := by linear_combination h + (d * u ^ 2 - 1) * hv2
+    exact (pow_eq_zero_iff (by decide)).mp
+      ((mul_eq_zero.mp hu).resolve_left (sub_ne_zero.mpr a_ne_d))
+
+/-- The only points of order dividing `2` are `(0, 1)` and `(0, -1)`. Zcash Protocol Specification
+[§A.3.3.6 "Affine-ctEdwards nonsmall-order
+check"](https://zips.z.cash/protocol/protocol.pdf#cctednonsmallorder) relies on `(0, -1)` being the
+unique point of order `2`. A doubled `u` is `2·u·v/(1 + d·u²·v²)`, so `u = 0` or `v = 0`; and
+`v = 0` would make the doubled `v` equal `-a·u² = -1`. -/
+theorem add_self_eq_zero_iff {a d : F} [h : Fact (IsComplete a d)] {p : F × F}
+    (hp : OnCurve a d p) : add a d p p = (0, 1) ↔ p = (0, 1) ∨ p = (0, -1) := by
+  have hden := den_ne_zero hp hp
+  obtain ⟨u, v⟩ := p
+  constructor
+  · intro hpp
+    simp only [OnCurve, add, Prod.mk.injEq] at hp hden hpp
+    obtain ⟨h1, h2⟩ := hpp
+    rw [div_eq_zero_iff, or_iff_left hden.1] at h1
+    rw [div_eq_one_iff_eq hden.2] at h2
+    have huv : u * v = 0 := by
+      have h2uv : (2 : F) * (u * v) = 0 := by linear_combination h1
+      exact (mul_eq_zero.mp h2uv).resolve_left h.out.F_nonbinary
+    rcases mul_eq_zero.mp huv with rfl | rfl
+    · have hv : (v - 1) * (v + 1) = 0 := by linear_combination hp
+      rcases mul_eq_zero.mp hv with h0 | h0
+      · left; simp only [Prod.mk.injEq, true_and]; linear_combination h0
+      · right; simp only [Prod.mk.injEq, true_and]; linear_combination h0
+    · exact absurd (by linear_combination -hp - h2) h.out.F_nonbinary
+  · rintro (h0 | h0) <;> simp only [Prod.mk.injEq] at h0 <;> obtain ⟨rfl, rfl⟩ := h0 <;>
+      simp [add]
+
 /-! ## Rich bundled types -/
 
 /-- A complete twisted Edwards curve (§5.4.9.3): coefficients `a` and `d`, bundled with the
@@ -359,6 +409,21 @@ theorem coords_nsmul (n : ℕ) (P : CtEdwardsPoint E) :
     rw [succ_nsmul]
     show add E.a E.d ((k • P).u, (k • P).v) (P.u, P.v) = smul E.a E.d (k + 1) (P.u, P.v)
     rw [ih]; rfl
+
+/-- The only point with `v = 1` is the identity (§A.3.3.3, `u_eq_zero_iff`). -/
+theorem eq_zero_of_v_eq_one {P : CtEdwardsPoint E} (h : P.v = 1) : P = 0 :=
+  ext_pair (by rw [h, (u_eq_zero_iff P.onCurve).mpr (Or.inl h)]; rfl)
+
+/-- The only points of order dividing `2` are `0` and `(0, -1)` (§A.3.3.6,
+`add_self_eq_zero_iff`). -/
+theorem two_nsmul_eq_zero_iff {P : CtEdwardsPoint E} :
+    2 • P = 0 ↔ P = 0 ∨ (P.u = 0 ∧ P.v = -1) := by
+  have hzero : P = 0 ↔ P.u = 0 ∧ P.v = 1 :=
+    ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨hu, hv⟩ => ext_pair (by rw [hu, hv]; rfl)⟩
+  have hsum : P + P = 0 ↔ add E.a E.d (P.u, P.v) (P.u, P.v) = (0, 1) :=
+    ⟨fun h => congrArg (fun Q : CtEdwardsPoint E => (Q.u, Q.v)) h, fun h => ext_pair h⟩
+  rw [two_nsmul, hsum, add_self_eq_zero_iff P.onCurve, hzero]
+  simp only [Prod.mk.injEq]
 
 end CtEdwardsPoint
 
