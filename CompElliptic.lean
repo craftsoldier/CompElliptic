@@ -20,6 +20,9 @@ import CompElliptic.Isogenies.ThreeIsogeny
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.IsoPasta
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.Curves.Jubjub
+import CompElliptic.Curves.JubjubWitnesses
+import CompElliptic.Curves.JubjubOrder
 import CompElliptic.Hashing.BranchCovers
 import CompElliptic.Hashing.CharacterSum
 import CompElliptic.Hashing.PastaSSWU

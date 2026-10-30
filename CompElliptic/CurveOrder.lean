@@ -5,14 +5,16 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Gregor Mitscha-Baude
 -/
 import CompElliptic.CurveForms.ShortWeierstrass
+import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
 /-!
-# Pinning a prime-order curve group's order without point-counting
+# Pinning a curve group's order without point-counting
 
 For a curve whose group is *known to have prime order* r, fixing the order to exactly r needs
-no point-counting algorithm (no Schoof, no proof of a counting algorithm's correctness).
-It needs only:
+no point-counting algorithm (no Schoof, no proof of a counting algorithm's correctness); the
+small-cofactor case `h·r` is the last bullet below. It needs only:
 
 1. a non-identity point P killed by r (so r ∣ #G, since r is prime); and
 2. an upper bound on #G that leaves r (rather than some multiple ≥ 2r) as the only possible #G.
@@ -33,6 +35,13 @@ Hasse's theorem, which Mathlib lacks for `WeierstrassCurve`.
   2√q, but it is unconditional, and it is enough whenever the prime r is close to the field size —
   exactly the situation for a prime-order cryptographic curve. Which of Layer 1's thresholds it
   clears is then decided by the two concrete numbers #F and r.
+
+* **Small cofactors, via the quadratic twist.** A curve of order h·r with a small cofactor h
+  has witnesses giving h·r ∣ #E, but the fibre bound can leave 2·h·r open as well. A curve and
+  its twist by a non-square have exactly 2·#F + 2 points between them (`card_add_card_twist`,
+  again by counting roots for each x). So a twist point not killed by 2·#F + 2 − 2·h·r rules
+  out 2·h·r (`card_eq_of_twist_witness`). Once the order is pinned, `card_torsionBy_eq` and
+  `eq_torsionBy_of_card_eq` make the r-torsion the unique subgroup of order r.
 
 This is an application of the *Independently re-checkable trust* principle: no general theorem is
 assumed, and all that a caller must discharge are closed numeric facts about #F and r, verifiable
@@ -97,6 +106,57 @@ theorem card_eq_of_prime_witness_of_lt_three_mul {G : Type*} [AddGroup G] [Finit
     exact hQ0 (hOdd Q (hQ ▸ addOrderOf_nsmul_eq_zero Q))
   rw [hk, show k = 1 by omega, Nat.mul_one]
 
+/-! ## The unique subgroup of prime order (finite abelian groups)
+
+When `#G = h·r` with `r` prime and `r ∤ h`, the `r`-torsion subgroup `G[r]` has exactly `r`
+elements and is the only subgroup of order `r`: for a curve, the prime-order subgroup is unique
+once the order is pinned. -/
+
+/-- If `#G = h·r` with `r` prime and `r ∤ h`, the `r`-torsion subgroup `G[r]` has exactly `r`
+elements. -/
+theorem card_torsionBy_eq {G : Type*} [AddCommGroup G] [Finite G] {r h : ℕ} (hr : r.Prime)
+    (hcard : Nat.card G = h * r) (hh : ¬ r ∣ h) :
+    Nat.card (AddSubgroup.torsionBy G (r : ℤ)) = r := by
+  haveI : Fact r.Prime := ⟨hr⟩
+  set H := AddSubgroup.torsionBy G (r : ℤ)
+  -- By Cauchy, `G` has an element of order `r`; it lies in `H`, so `r ∣ #H`.
+  obtain ⟨P, hP⟩ := exists_prime_addOrderOf_dvd_card' r (hcard ▸ dvd_mul_left r h)
+  have hPr : r • P = 0 := hP ▸ addOrderOf_nsmul_eq_zero P
+  have hP0 : (⟨P, AddSubgroup.torsionBy.nsmul_iff.mpr hPr⟩ : H) ≠ 0 := fun h0 => by
+    have : P = 0 := congrArg Subtype.val h0
+    rw [this, addOrderOf_zero] at hP
+    exact hr.one_lt.ne hP
+  obtain ⟨m, hm⟩ := dvd_natCard_of_prime_witness hr hP0 (Subtype.ext hPr)
+  have hHG : Nat.card H ∣ h * r := hcard ▸ AddSubgroup.card_addSubgroup_dvd_card H
+  -- `m = 1`: by Cauchy, a prime `p ∣ m` is the order of some element of `H`, so `p = r`; then
+  -- `r² ∣ #H ∣ h·r`, contradicting `r ∤ h`.
+  have hm1 : m = 1 := by
+    by_contra hne
+    have hm0 : m ≠ 0 := by
+      rintro rfl
+      have : Nat.card H ≠ 0 := Nat.card_pos.ne'
+      simp_all
+    obtain ⟨p, hp, hpm⟩ := Nat.exists_prime_and_dvd hne
+    haveI : Fact p.Prime := ⟨hp⟩
+    obtain ⟨y, hy⟩ := exists_prime_addOrderOf_dvd_card' p (hm ▸ Dvd.dvd.mul_left hpm r)
+    have hpr : p ∣ r := hy ▸ addOrderOf_dvd_of_nsmul_eq_zero
+      (Subtype.ext (AddSubgroup.torsionBy.nsmul_iff.mp y.2))
+    obtain rfl := (Nat.prime_dvd_prime_iff_eq hp hr).mp hpr
+    have : p * p ∣ h * p := (hm ▸ Nat.mul_dvd_mul_left p hpm).trans hHG
+    exact hh (Nat.dvd_of_mul_dvd_mul_right hp.pos (by simpa [mul_comm] using this))
+  rw [hm, hm1, mul_one]
+
+/-- Under the hypotheses of `card_torsionBy_eq`, every subgroup of order `r` is the `r`-torsion
+subgroup: its elements are killed by its order `r`, and the two have the same size. -/
+theorem eq_torsionBy_of_card_eq {G : Type*} [AddCommGroup G] [Finite G] {r h : ℕ}
+    (hr : r.Prime) (hcard : Nat.card G = h * r) (hh : ¬ r ∣ h) (K : AddSubgroup G)
+    (hK : Nat.card K = r) : K = AddSubgroup.torsionBy G (r : ℤ) := by
+  have hle : K ≤ AddSubgroup.torsionBy G (r : ℤ) := fun y hy => by
+    have : Nat.card K • (⟨y, hy⟩ : K) = 0 := card_nsmul_eq_zero'
+    rw [hK] at this
+    exact AddSubgroup.torsionBy.nsmul_iff.mpr (congrArg Subtype.val this)
+  exact AddSubgroup.eq_of_le_of_card_ge hle (by rw [card_torsionBy_eq hr hcard hh, hK])
+
 /-! ## Layer 2: the fibre bound `#E(F) ≤ 2 · #F + 1` -/
 
 variable {F : Type*} [Field F] [DecidableEq F]
@@ -152,6 +212,68 @@ theorem card_le_two_mul_card_add_one [Fintype F] (E : SWCurve F) :
         rw [Finset.card_univ] at h
         omega
 
+/-- The points of `E` are its affine points and `𝒪`, which is off the curve
+(`not_onCurve_zero`). -/
+theorem card_eq_card_onCurve_add_one [Fintype F] (E : SWCurve F) :
+    Nat.card (SWPoint E) = (Finset.univ.filter fun R : F × F => OnCurve E.A E.B R).card + 1 := by
+  rw [Nat.card_congr (SWPoint.equivSubtype E), Nat.card_eq_fintype_card, Fintype.card_subtype]
+  have hsplit : (Finset.univ.filter fun R : F × F => Valid E.A E.B R) =
+      (Finset.univ.filter fun R : F × F => OnCurve E.A E.B R) ∪ {((0 : F), (0 : F))} := by
+    ext R; simp [Valid, or_comm]
+  have hdisj : Disjoint (Finset.univ.filter fun R : F × F => OnCurve E.A E.B R)
+      {((0 : F), (0 : F))} := by
+    rw [Finset.disjoint_singleton_right]
+    simpa using not_onCurve_zero E.B_nonzero
+  rw [hsplit, Finset.card_union_of_disjoint hdisj, Finset.card_singleton]
+
+/-- For a non-square `c`, the equations `y² = t` and `y² = c³·t` have exactly two solutions `y`
+between them. Each has `1 + χ(·)` solutions for the quadratic character `χ`, and
+`χ(c³·t) = -χ(t)`. -/
+private theorem card_sqrts_add_card_sqrts [Fintype F] (h2 : (2 : F) ≠ 0) {c : F}
+    (hc : ¬ IsSquare c) (t : F) :
+    (Finset.univ.filter fun y : F => y^2 = t).card +
+      (Finset.univ.filter fun y : F => y^2 = c^3 * t).card = 2 := by
+  have hF : ringChar F ≠ 2 := fun hchar =>
+    h2 (by simpa [hchar] using ringChar.Nat.cast_ringChar (R := F))
+  have hs₁ := quadraticChar_card_sqrts hF t
+  have hs₂ := quadraticChar_card_sqrts hF (c^3 * t)
+  have hχc : quadraticChar F c = -1 := quadraticChar_neg_one_iff_not_isSquare.mpr hc
+  rw [map_mul, map_pow, hχc] at hs₂
+  simp only [Set.toFinset_setOf] at hs₁ hs₂
+  have : (((Finset.univ.filter fun y : F => y^2 = t).card +
+      (Finset.univ.filter fun y : F => y^2 = c^3 * t).card : ℕ) : ℤ) = 2 := by
+    push_cast; rw [hs₁, hs₂]; ring
+  exact_mod_cast this
+
+/-- **The twist identity.** A curve `E` and its quadratic twist `E'` by a non-square `c`
+(`A' = c²·A`, `B' = c³·B`) have exactly `2·#F + 2` points between them. -/
+theorem card_add_card_twist [Fintype F] (h2 : (2 : F) ≠ 0) (E E' : SWCurve F) {c : F}
+    (hc : ¬ IsSquare c) (hA : E'.A = c^2 * E.A) (hB : E'.B = c^3 * E.B) :
+    Nat.card (SWPoint E) + Nat.card (SWPoint E') = 2 * Fintype.card F + 2 := by
+  have hc0 : c ≠ 0 := fun h => hc (h ▸ IsSquare.zero)
+  -- Count the affine points fibre by fibre over `x`.
+  have hfib : ∀ A B : F, (Finset.univ.filter fun R : F × F => OnCurve A B R).card =
+      ∑ x : F, (Finset.univ.filter fun y : F => y^2 = x^3 + A * x + B).card := by
+    intro A B
+    simp only [Finset.card_filter, Fintype.sum_prod_type, OnCurve]
+  rw [card_eq_card_onCurve_add_one, card_eq_card_onCurve_add_one, hfib, hfib, hA, hB]
+  -- Reindex the twist's sum by `X = c·x`.
+  have htw : ∑ X : F, (Finset.univ.filter fun y : F => y^2 = X^3 + c^2 * E.A * X + c^3 * E.B).card =
+      ∑ x : F, (Finset.univ.filter fun y : F => y^2 = c^3 * (x^3 + E.A * x + E.B)).card := by
+    refine (Fintype.sum_equiv (Equiv.mulLeft₀ c hc0) _ _ fun x => ?_).symm
+    simp only [Equiv.mulLeft₀_apply]
+    congr 2; ext y; ring_nf
+  rw [htw]
+  -- For each `x`, the two fibres have two points between them (`card_sqrts_add_card_sqrts`);
+  -- adding the two identities `𝒪` gives `2·#F + 2`.
+  have hsum : ∑ x : F, (Finset.univ.filter fun y : F => y^2 = x^3 + E.A * x + E.B).card +
+      ∑ x : F, (Finset.univ.filter fun y : F => y^2 = c^3 * (x^3 + E.A * x + E.B)).card =
+      2 * Fintype.card F := by
+    rw [← Finset.sum_add_distrib]
+    simp only [card_sqrts_add_card_sqrts h2 hc, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+    ring
+  omega
+
 /-! ## Order pinning from the fibre bound
 
 Both results below feed `card_le_two_mul_card_add_one` into Layer 1, replacing its `#G < 2r` (resp.
@@ -203,5 +325,31 @@ theorem card_eq_of_prime_witness_of_card_lt_three_mul [Fintype F] (E : SWCurve F
     Nat.card (SWPoint E) = r :=
   card_eq_of_prime_witness_of_lt_three_mul hrPrime hP hPr
     (lt_of_le_of_lt (card_le_two_mul_card_add_one E) hBound) hOdd
+
+/-- **Order from a twist witness.** If `m ∣ #E(F)`, the fibre bound leaves only `m` and `2m`
+(`2·#F + 1 < 3m`), and some point `W` of a twist `E'` of `E` has `[2·#F + 2 − 2m] W ≠ 𝒪`, then
+`#E(F) = m`.
+
+`#E(F) = 2m` would make `#E'(F) = 2·#F + 2 − 2m` by `card_add_card_twist`, and the group order
+kills every point of `E'`. This is the small-cofactor route: `m = h·r`, with `h·r ∣ #E(F)` from
+witnesses of orders `h` and `r`. -/
+theorem card_eq_of_twist_witness [Fintype F] (h2 : (2 : F) ≠ 0) (E E' : SWCurve F) {c : F}
+    (hc : ¬ IsSquare c) (hA : E'.A = c^2 * E.A) (hB : E'.B = c^3 * E.B) {m : ℕ}
+    (hm : m ∣ Nat.card (SWPoint E)) (hBound : 2 * Fintype.card F + 1 < 3 * m)
+    {W : SWPoint E'} (hW : (2 * Fintype.card F + 2 - 2 * m) • W ≠ 0) :
+    Nat.card (SWPoint E) = m := by
+  obtain ⟨k, hk⟩ := hm
+  have hle := card_le_two_mul_card_add_one E
+  have hpos : 0 < Nat.card (SWPoint E) := Nat.card_pos
+  have htw := card_add_card_twist h2 E E' hc hA hB
+  rcases k with _ | _ | _ | k
+  · rw [Nat.mul_zero] at hk; omega
+  · simpa using hk
+  · exfalso
+    have hcard : Nat.card (SWPoint E') = 2 * Fintype.card F + 2 - 2 * m := by omega
+    exact hW (hcard ▸ card_nsmul_eq_zero')
+  · exfalso
+    rw [show m * (k + 1 + 1 + 1) = m * k + 3 * m by ring] at hk
+    omega
 
 end CompElliptic.CurveOrder

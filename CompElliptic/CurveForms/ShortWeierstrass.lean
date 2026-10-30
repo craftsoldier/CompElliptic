@@ -527,6 +527,101 @@ theorem coords_nsmul {E : SWCurve F} (n : ℕ) (P : SWPoint E) :
     rw [ih]
     rfl
 
+/-! ### Scalar multiples from a chain of slope certificates
+
+To prove `[n] B = R` for concrete points, supply the slope of each chord and tangent in a
+double-and-add chain. `runChain` checks every slope by multiplying back,
+`l * (x₂ - x₁) = y₂ - y₁` or `l * (2*y) = 3 * x^2 + A`, and computes the next point from it by
+multiplication alone, so the kernel never inverts a field element. `SWPoint.runChain_sound` turns
+a successful run into the scalar multiple, with no `native_decide`. -/
+
+/-- A chord step of the raw `add`: for distinct abscissas, a slope `l` with
+`l * (x₂ - x₁) = y₂ - y₁` determines the sum. -/
+theorem add_of_chord_slope (a : F) {x₁ y₁ x₂ y₂ l x₃ y₃ : F}
+    (h₁ : (x₁, y₁) ≠ (0, 0)) (h₂ : (x₂, y₂) ≠ (0, 0)) (hx : x₁ ≠ x₂)
+    (hl : l * (x₂ - x₁) = y₂ - y₁) (hx₃ : x₃ = l^2 - x₁ - x₂) (hy₃ : y₃ = l * (x₁ - x₃) - y₁) :
+    add a (x₁, y₁) (x₂, y₂) = (x₃, y₃) := by
+  have hl' : (y₂ - y₁) / (x₂ - x₁) = l := by
+    rw [div_eq_iff (sub_ne_zero.mpr (Ne.symm hx))]; exact hl.symm
+  simp only [add, h₁, h₂, hx, if_false, hl', hx₃, hy₃]
+
+/-- A tangent step of the raw `add`: for `y ≠ -y`, a slope `l` with `l * (2*y) = 3 * x^2 + a`
+determines the double. -/
+theorem add_of_tangent_slope (a : F) {x y l x₃ y₃ : F} (hy : y + y ≠ 0)
+    (hl : l * (2*y) = 3 * x^2 + a) (hx₃ : x₃ = l^2 - x - x) (hy₃ : y₃ = l * (x - x₃) - y) :
+    add a (x, y) (x, y) = (x₃, y₃) := by
+  -- `(0, 0)` has `y + y = 0`, so `hy` already rules out the identity sentinel.
+  have h : (x, y) ≠ (0, 0) := fun h => hy (by simp [(Prod.mk.inj h).2])
+  have h2y : (2 : F) * y ≠ 0 := by rwa [two_mul]
+  have hl' : (3 * x^2 + a) / (2*y) = l := by rw [div_eq_iff h2y]; exact hl.symm
+  simp only [add, h, hy, if_true, if_false, hl', hx₃, hy₃]
+
+/-- One step of a double-and-add chain, carrying the slope that certifies it: double the current
+point, or add the base point. -/
+inductive ChainStep (F : Type*)
+  | double (l : F)
+  | addBase (l : F)
+
+/-- The point one step reaches from `P`, when its slope checks. A doubling needs
+`l * (2*y) = 3 * x^2 + a` and `y + y ≠ 0`; an addition of `B` needs `P ≠ (0, 0)`, `x ≠ x_B` and
+`l * (x_B - x) = y_B - y`. -/
+def ChainStep.next (a : F) (B P : F × F) : ChainStep F → Option (F × F)
+  | .double l =>
+    if l * (2*P.2) = 3 * P.1^2 + a ∧ P.2 + P.2 ≠ 0 then
+      some (l^2 - P.1 - P.1, l * (P.1 - (l^2 - P.1 - P.1)) - P.2)
+    else none
+  | .addBase l =>
+    if P ≠ (0, 0) ∧ P.1 ≠ B.1 ∧ l * (B.1 - P.1) = B.2 - P.2 then
+      some (l^2 - P.1 - B.1, l * (P.1 - (l^2 - P.1 - B.1)) - P.2)
+    else none
+
+/-- Run a chain from `P`, failing at the first slope that does not check. -/
+def runChain (a : F) (B : F × F) : F × F → List (ChainStep F) → Option (F × F)
+  | P, [] => some P
+  | P, s :: ss => (s.next a B P).bind fun Q => runChain a B Q ss
+
+/-- The scalar a chain reaches from `c`: a doubling takes `c` to `2*c`, an addition to `c + 1`. -/
+def chainScalar : List (ChainStep F) → ℕ → ℕ
+  | [], c => c
+  | .double _ :: ss, c => chainScalar ss (2*c)
+  | .addBase _ :: ss, c => chainScalar ss (c + 1)
+
+/-- **A checked chain computes a scalar multiple.** If `c • B = P` and the chain runs from `P` to
+`R`, then `R` is the point `(chainScalar steps c) • B`. -/
+theorem SWPoint.runChain_sound {E : SWCurve F} {B : SWPoint E} (hB : B ≠ 0) :
+    ∀ (steps : List (ChainStep F)) {c : ℕ} {P : SWPoint E} {R : F × F}, c • B = P →
+      runChain E.A (B.x, B.y) (P.x, P.y) steps = some R →
+      ∃ Q : SWPoint E, (chainScalar steps c) • B = Q ∧ (Q.x, Q.y) = R := by
+  have hB' : (B.x, B.y) ≠ (0, 0) := fun h => hB (SWPoint.ext_pair h)
+  intro steps
+  induction steps with
+  | nil =>
+    intro c P R hP h
+    exact ⟨P, hP, Option.some.inj h⟩
+  | cons s ss ih =>
+    intro c P R hP h
+    simp only [runChain, Option.bind_eq_some_iff] at h
+    obtain ⟨Q', hQ', hrun⟩ := h
+    -- Each step takes the actual group sum (`P + P` or `P + B`) and shows its coordinates are the
+    -- computed ones, so the computed point never needs its own on-curve proof.
+    cases s with
+    | double l =>
+      simp only [ChainStep.next] at hQ'
+      split_ifs at hQ' with hc
+      obtain ⟨hl, hy⟩ := hc
+      have hcoords : ((P + P).x, (P + P).y) = Q' := by
+        rw [SWPoint.add_x, SWPoint.add_y, add_of_tangent_slope E.A hy hl rfl rfl]
+        exact Option.some.inj hQ'
+      exact ih (c := 2*c) (P := P + P) (by rw [two_mul, add_nsmul, hP]) (hcoords ▸ hrun)
+    | addBase l =>
+      simp only [ChainStep.next] at hQ'
+      split_ifs at hQ' with hc
+      obtain ⟨hP0, hx, hl⟩ := hc
+      have hcoords : ((P + B).x, (P + B).y) = Q' := by
+        rw [SWPoint.add_x, SWPoint.add_y, add_of_chord_slope E.A hP0 hB' hx hl rfl rfl]
+        exact Option.some.inj hQ'
+      exact ih (c := c + 1) (P := P + B) (by rw [add_nsmul, one_nsmul, hP]) (hcoords ▸ hrun)
+
 /-! ## The affine coordinate system
 
 `E` as an instance of the general `CoordinateSystem` abstraction: the injective (`Rel = Eq`) case,
