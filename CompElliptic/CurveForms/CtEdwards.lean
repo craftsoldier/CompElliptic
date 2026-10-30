@@ -9,7 +9,7 @@ import Mathlib.Algebra.Field.Basic
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
-import CompElliptic.ScalarMul
+import CompElliptic.CoordinateSystem
 import CompElliptic.CurveForms.CtEdwardsCertificates
 
 /-!
@@ -32,7 +32,7 @@ as defined in the Zcash Protocol Specification
    and `CtEdwardsPoint E` (correct by construction: on the curve). The identity `(0, 1)` is an
    affine point, so no sentinel is needed.
 3. **Group structure** — `AddCommGroup (CtEdwardsPoint E)`, with the fast scalar action
-   `CompElliptic.binNsmul` (`ScalarMul.lean`).
+   `CompElliptic.binNsmul` (`ScalarMul.lean`), and `E` as an affine `CoordinateSystem`.
 
 The field assumption is a generic `[Field F]`; the characteristic is kept away from `2` by the
 `F_nonbinary` condition.
@@ -426,5 +426,31 @@ theorem two_nsmul_eq_zero_iff {P : CtEdwardsPoint E} :
   simp only [Prod.mk.injEq]
 
 end CtEdwardsPoint
+
+/-! ## The affine coordinate system
+
+`E` as an instance of the general `CoordinateSystem` abstraction: the injective (`Rel = Eq`) case,
+built from the raw group laws, as for short Weierstrass. -/
+
+/-- The affine coordinate system of a complete twisted Edwards curve `E` (`Rel = Eq`). -/
+def affineCoordinateSystem (E : CtEdwardsCurve F) : CoordinateSystem (F × F) where
+  Valid := OnCurve E.a E.d
+  Rel := Eq
+  zero := (0, 1)
+  add := add E.a E.d
+  neg := neg
+  valid_zero := by simp [OnCurve]
+  valid_add := fun hp hq => onCurve_add hp hq
+  valid_neg := fun hp => onCurve_neg hp
+  rel_refl := fun _ => rfl
+  rel_symm := Eq.symm
+  rel_trans := Eq.trans
+  add_congr := fun ha hb => by rw [ha, hb]
+  neg_congr := fun ha => by rw [ha]
+  zero_add := fun {p} _ => zero_add E.a E.d p
+  add_zero := fun {p} _ => add_zero E.a E.d p
+  add_assoc := fun hp hq hr => add_assoc hp hq hr
+  add_comm := fun {p q} _ _ => add_comm E.a E.d p q
+  neg_add := fun {p} hp => by rw [add_comm]; exact add_neg hp
 
 end CompElliptic.CurveForms.CtEdwards
