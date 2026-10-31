@@ -95,7 +95,9 @@ assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
 
 /-! ## The Jubjub curve — standard axioms only
 
-The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin. -/
+The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin; the
+ctEdwards curve, its equivalence with the short-Weierstrass model and the specification's
+conversion maps. -/
 
 assert_axioms CompElliptic.Curves.Jubjub.d_eq
 assert_axioms CompElliptic.Curves.Jubjub.montA_eq
@@ -110,6 +112,14 @@ assert_axioms CompElliptic.Curves.Jubjub.SW.Wpt_witness
 assert_axioms CompElliptic.Curves.Jubjub.SW.card_eq
 assert_axioms CompElliptic.Curves.Jubjub.SW.card_primeOrderSubgroup
 assert_axioms CompElliptic.Curves.Jubjub.SW.eq_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.a_square
+assert_axioms CompElliptic.Curves.Jubjub.d_nonsquare
+assert_axioms CompElliptic.Curves.Jubjub.montScale_sq
+assert_axioms CompElliptic.Curves.Jubjub.montScale_val_le
+assert_axioms CompElliptic.Curves.Jubjub.montgomery_eq_swChange_smul
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_eq_ctEdwardsToMont
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_symm_eq_montToCtEdwards
+assert_axioms CompElliptic.Curves.Jubjub.ctEdwardsToMont_fst_ne
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
@@ -140,6 +150,7 @@ check certifies that its maps are compiled code. -/
 assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEquiv +choice
 assert_computable CompElliptic.CurveForms.Montgomery.variableChangeEquiv +choice
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.SWPoint.equivPoint +choice
+assert_computable CompElliptic.Curves.Jubjub.swEquiv +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 
