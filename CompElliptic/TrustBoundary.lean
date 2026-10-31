@@ -73,6 +73,9 @@ assert_axioms CompElliptic.CurveForms.Montgomery.isElliptic_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.equation_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.x_eq_zero_of_y_eq_zero
 assert_axioms CompElliptic.CurveForms.Montgomery.x_add_one_ne_zero
+assert_axioms CompElliptic.CurveForms.Montgomery.equation_variableChange_iff
+assert_axioms CompElliptic.CurveForms.Montgomery.slope_variableChange
+assert_axioms CompElliptic.CurveForms.Montgomery.variableChangeMap_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.ofMontgomery_toMontgomery
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_ofMontgomery
@@ -131,6 +134,7 @@ assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
 check certifies that its maps are compiled code. -/
 
 assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEquiv +choice
+assert_computable CompElliptic.CurveForms.Montgomery.variableChangeEquiv +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 

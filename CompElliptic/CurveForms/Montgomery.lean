@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Julian Abraham
 -/
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
+import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import Mathlib.Algebra.Group.Even
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -27,8 +28,10 @@ characteristic beyond `2 ≠ 0` is needed. The discriminant is `16·(A² − 4)/
 
 Mathlib's `addX`, `addY` at the scaled points are the curve's chord and tangent formulas,
 scaled by `1/B`, and its slopes are the curve's slopes (`§ Chord and tangent`). The module
-closes with the facts about exceptional points that the specification relies on
-(`§ Exceptional points`).
+then gives the facts about exceptional points that the specification relies on
+(`§ Exceptional points`), and closes with the changes of variables `x = u²·x' + r`, `y = u³·y'`
+of Mathlib's `VariableChange`, by which a Mathlib model such as `toW A B` can be brought to short
+Weierstrass form; each is an additive equivalence of affine points (`§ Changes of variables`).
 -/
 
 namespace CompElliptic.CurveForms.Montgomery
@@ -153,5 +156,206 @@ theorem x_add_one_ne_zero {A B x y : F} (hB : B ≠ 0) (hd : ¬ IsSquare ((A - 2
   obtain rfl : x = -1 := by linear_combination hx
   unfold OnCurve at h
   exact hd ⟨y, by rw [div_eq_iff hB]; linear_combination -h⟩
+
+/-! ## Changes of variables
+
+Mathlib's `VariableChange` `C = ⟨u, r, s, t⟩` acts on Weierstrass curves so that a point
+`(x', y')` of `C • W` is the point `(u²·x' + r, u³·y' + s·u²·x' + t)` of `W`. For `s = t = 0`
+this is `(x', y') ↦ (u²·x' + r, u³·y')`, which carries Mathlib's chord-and-tangent formulas on
+`C • W` to those on `W` (the slope scales by `u`), so it is an additive equivalence of affine
+points (`variableChangeEquiv`). The equivalence takes the curve `W'` and a proof of `W' = C • W`,
+so that a curve given otherwise (such as `toW A B`) needs no cast. -/
+
+section VariableChange
+
+open WeierstrassCurve WeierstrassCurve.Affine
+
+variable {W : WeierstrassCurve F} {C : VariableChange F}
+
+/-- The coefficients of `C • W` for `s = t = 0`, with `u⁻¹` written as an inverse in `F`. -/
+theorem variableChange_coeffs (hs : C.s = 0) (ht : C.t = 0) :
+    (C • W).a₁ = (C.u : F)⁻¹ * W.a₁ ∧ (C • W).a₂ = (C.u : F)⁻¹ ^ 2 * (W.a₂ + 3 * C.r) ∧
+      (C • W).a₃ = (C.u : F)⁻¹ ^ 3 * (W.a₃ + C.r * W.a₁) ∧
+      (C • W).a₄ = (C.u : F)⁻¹ ^ 4 * (W.a₄ + 2 * C.r * W.a₂ + 3 * C.r ^ 2) ∧
+      (C • W).a₆ = (C.u : F)⁻¹ ^ 6 * (W.a₆ + C.r * W.a₄ + C.r ^ 2 * W.a₂ + C.r ^ 3) := by
+  simp only [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
+    variableChange_a₆, hs, ht, Units.val_inv_eq_inv_val]
+  exact ⟨by ring, by ring, by ring, by ring, by ring⟩
+
+/-- For `s = t = 0`, `(x, y)` is on `C • W` exactly when `(u²·x + r, u³·y)` is on `W`. -/
+theorem equation_variableChange_iff (hs : C.s = 0) (ht : C.t = 0) (x y : F) :
+    (C • W).toAffine.Equation x y ↔
+      W.toAffine.Equation ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₆⟩ := variableChange_coeffs (W := W) hs ht
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  rw [equation_iff, equation_iff]
+  simp only [h₁, h₂, h₃, h₄, h₆]
+  -- `W`'s equation at the image is `u⁶` times `C • W`'s equation at the point.
+  have key : ((C.u : F) ^ 3 * y) ^ 2 + W.a₁ * ((C.u : F) ^ 2 * x + C.r) * ((C.u : F) ^ 3 * y) +
+      W.a₃ * ((C.u : F) ^ 3 * y) - (((C.u : F) ^ 2 * x + C.r) ^ 3 +
+      W.a₂ * ((C.u : F) ^ 2 * x + C.r) ^ 2 + W.a₄ * ((C.u : F) ^ 2 * x + C.r) + W.a₆) =
+      (C.u : F) ^ 6 * (y ^ 2 + (C.u : F)⁻¹ * W.a₁ * x * y +
+        (C.u : F)⁻¹ ^ 3 * (W.a₃ + C.r * W.a₁) * y - (x ^ 3 +
+        (C.u : F)⁻¹ ^ 2 * (W.a₂ + 3 * C.r) * x ^ 2 +
+        (C.u : F)⁻¹ ^ 4 * (W.a₄ + 2 * C.r * W.a₂ + 3 * C.r ^ 2) * x +
+        (C.u : F)⁻¹ ^ 6 * (W.a₆ + C.r * W.a₄ + C.r ^ 2 * W.a₂ + C.r ^ 3))) := by
+    field_simp
+    ring
+  constructor
+  · intro e
+    linear_combination key + (C.u : F) ^ 6 * e
+  · intro e
+    apply mul_left_cancel₀ (pow_ne_zero 6 hu)
+    linear_combination e - key
+
+/-- For `s = t = 0`, `negY` commutes with the change of variables. -/
+theorem negY_variableChange (hs : C.s = 0) (ht : C.t = 0) (x y : F) :
+    W.toAffine.negY ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y) =
+      (C.u : F) ^ 3 * (C • W).toAffine.negY x y := by
+  obtain ⟨h₁, -, h₃, -, -⟩ := variableChange_coeffs (W := W) hs ht
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  simp only [Affine.negY, h₁, h₃]
+  field_simp
+  ring
+
+/-- For `s = t = 0`, `addX` commutes with the change of variables when the slope is scaled by
+`u`. -/
+theorem addX_variableChange (hs : C.s = 0) (ht : C.t = 0) (x₁ x₂ ℓ : F) :
+    W.toAffine.addX ((C.u : F) ^ 2 * x₁ + C.r) ((C.u : F) ^ 2 * x₂ + C.r) ((C.u : F) * ℓ) =
+      (C.u : F) ^ 2 * (C • W).toAffine.addX x₁ x₂ ℓ + C.r := by
+  obtain ⟨h₁, h₂, -, -, -⟩ := variableChange_coeffs (W := W) hs ht
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  simp only [Affine.addX, h₁, h₂]
+  field_simp
+  ring
+
+/-- For `s = t = 0`, `addY` commutes with the change of variables when the slope is scaled by
+`u`. -/
+theorem addY_variableChange (hs : C.s = 0) (ht : C.t = 0) (x₁ x₂ y₁ ℓ : F) :
+    W.toAffine.addY ((C.u : F) ^ 2 * x₁ + C.r) ((C.u : F) ^ 2 * x₂ + C.r) ((C.u : F) ^ 3 * y₁)
+      ((C.u : F) * ℓ) = (C.u : F) ^ 3 * (C • W).toAffine.addY x₁ x₂ y₁ ℓ := by
+  rw [Affine.addY, Affine.negAddY, addX_variableChange hs ht,
+    show (C.u : F) * ℓ * ((C.u : F) ^ 2 * (C • W).toAffine.addX x₁ x₂ ℓ + C.r -
+        ((C.u : F) ^ 2 * x₁ + C.r)) + (C.u : F) ^ 3 * y₁ =
+      (C.u : F) ^ 3 * (C • W).toAffine.negAddY x₁ x₂ y₁ ℓ by rw [Affine.negAddY]; ring,
+    negY_variableChange hs ht, Affine.addY]
+
+variable [DecidableEq F]
+
+/-- For `s = t = 0`, the slope of `W` at the images is `u` times the slope of `C • W`: in each of
+Mathlib's three cases (chord, tangent, vertical), both sides are in the same case. -/
+theorem slope_variableChange (hs : C.s = 0) (ht : C.t = 0) (x₁ x₂ y₁ y₂ : F) :
+    W.toAffine.slope ((C.u : F) ^ 2 * x₁ + C.r) ((C.u : F) ^ 2 * x₂ + C.r) ((C.u : F) ^ 3 * y₁)
+      ((C.u : F) ^ 3 * y₂) = (C.u : F) * (C • W).toAffine.slope x₁ x₂ y₁ y₂ := by
+  obtain ⟨h₁, h₂, h₃, h₄, -⟩ := variableChange_coeffs (W := W) hs ht
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  by_cases hx : x₁ = x₂
+  · subst hx
+    by_cases hy : y₁ = (C • W).toAffine.negY x₁ y₂
+    · rw [slope_of_Y_eq rfl hy, slope_of_Y_eq rfl (by rw [negY_variableChange hs ht, hy]),
+        mul_zero]
+    · have hy' : (C.u : F) ^ 3 * y₁ ≠
+          W.toAffine.negY ((C.u : F) ^ 2 * x₁ + C.r) ((C.u : F) ^ 3 * y₂) := by
+        rw [negY_variableChange hs ht]
+        exact fun e => hy (mul_left_cancel₀ (pow_ne_zero 3 hu) e)
+      rw [slope_of_Y_ne rfl hy, slope_of_Y_ne rfl hy', negY_variableChange hs ht, ← mul_sub]
+      -- The tangent numerator scales by `u⁴`, the denominator by `u³`.
+      have num : 3 * ((C.u : F) ^ 2 * x₁ + C.r) ^ 2 + 2 * W.a₂ * ((C.u : F) ^ 2 * x₁ + C.r) +
+          W.a₄ - W.a₁ * ((C.u : F) ^ 3 * y₁) = (C.u : F) ^ 4 * (3 * x₁ ^ 2 +
+          2 * (C • W).a₂ * x₁ + (C • W).a₄ - (C • W).a₁ * y₁) := by
+        rw [h₁, h₂, h₄]
+        field_simp
+        ring
+      rw [num, show (C.u : F) ^ 4 * (3 * x₁ ^ 2 + 2 * (C • W).a₂ * x₁ + (C • W).a₄ -
+          (C • W).a₁ * y₁) = (C.u : F) ^ 3 * ((C.u : F) * (3 * x₁ ^ 2 + 2 * (C • W).a₂ * x₁ +
+          (C • W).a₄ - (C • W).a₁ * y₁)) by ring, mul_div_mul_left _ _ (pow_ne_zero 3 hu),
+        mul_div_assoc]
+  · have hx' : (C.u : F) ^ 2 * x₁ + C.r ≠ (C.u : F) ^ 2 * x₂ + C.r := fun e =>
+      hx (mul_left_cancel₀ (pow_ne_zero 2 hu) (add_right_cancel e))
+    rw [slope_of_X_ne hx, slope_of_X_ne hx',
+      show (C.u : F) ^ 2 * x₁ + C.r - ((C.u : F) ^ 2 * x₂ + C.r) = (C.u : F) ^ 2 * (x₁ - x₂) by
+        ring, ← mul_sub, show (C.u : F) ^ 3 * (y₁ - y₂) = (C.u : F) ^ 2 * ((C.u : F) * (y₁ - y₂)) by
+        ring, mul_div_mul_left _ _ (pow_ne_zero 2 hu), mul_div_assoc]
+
+variable [W.IsElliptic] {W' : WeierstrassCurve F}
+
+/-- The map `(x', y') ↦ (u²·x' + r, u³·y')` from the affine points of `W' = C • W` to those of
+`W`, for `s = t = 0`. -/
+def variableChangeMap (hs : C.s = 0) (ht : C.t = 0) (h : W' = C • W) :
+    W'.toAffine.Point → W.toAffine.Point
+  | .zero => 0
+  | .some x y hn => .some ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y)
+      (equation_iff_nonsingular.mp ((equation_variableChange_iff hs ht x y).mp (h ▸ hn.1)))
+
+/-- The inverse map `(x, y) ↦ ((x − r)/u², y/u³)`. -/
+def variableChangeUnmap (hs : C.s = 0) (ht : C.t = 0) (h : W' = C • W) :
+    W.toAffine.Point → W'.toAffine.Point
+  | .zero => 0
+  | .some x y hn => .some ((x - C.r) / (C.u : F) ^ 2) (y / (C.u : F) ^ 3) (by
+      subst h
+      refine equation_iff_nonsingular.mp ((equation_variableChange_iff hs ht _ _).mpr ?_)
+      rw [mul_div_cancel₀ _ (pow_ne_zero 2 C.u.ne_zero), sub_add_cancel,
+        mul_div_cancel₀ _ (pow_ne_zero 3 C.u.ne_zero)]
+      exact hn.1)
+
+omit [DecidableEq F] in
+/-- The map on an affine point. -/
+theorem variableChangeMap_some (hs : C.s = 0) (ht : C.t = 0) (h : W' = C • W) {x y : F}
+    (hn : W'.toAffine.Nonsingular x y) :
+    variableChangeMap hs ht h (.some x y hn) =
+      .some ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y)
+      (equation_iff_nonsingular.mp ((equation_variableChange_iff hs ht x y).mp (h ▸ hn.1))) :=
+  rfl
+
+/-- The map is additive. -/
+theorem variableChangeMap_add (hs : C.s = 0) (ht : C.t = 0) (h : W' = C • W)
+    (P Q : W'.toAffine.Point) :
+    variableChangeMap hs ht h (P + Q) =
+      variableChangeMap hs ht h P + variableChangeMap hs ht h Q := by
+  subst h
+  rcases P with _ | ⟨x₁, y₁, h₁⟩ <;> rcases Q with _ | ⟨x₂, y₂, h₂⟩
+  · rfl
+  · rfl
+  · rfl
+  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+  by_cases hxy : x₁ = x₂ ∧ y₁ = (C • W).toAffine.negY x₂ y₂
+  · rw [Point.add_of_Y_eq hxy.1 hxy.2]
+    exact (Point.add_of_Y_eq (by rw [hxy.1]) (by rw [negY_variableChange hs ht, hxy.2])).symm
+  · have hxy' : ¬((C.u : F) ^ 2 * x₁ + C.r = (C.u : F) ^ 2 * x₂ + C.r ∧ (C.u : F) ^ 3 * y₁ =
+        W.toAffine.negY ((C.u : F) ^ 2 * x₂ + C.r) ((C.u : F) ^ 3 * y₂)) := by
+      rintro ⟨ex, ey⟩
+      rw [negY_variableChange hs ht] at ey
+      exact hxy ⟨mul_left_cancel₀ (pow_ne_zero 2 hu) (add_right_cancel ex),
+        mul_left_cancel₀ (pow_ne_zero 3 hu) ey⟩
+    rw [Point.add_some hxy, variableChangeMap_some, variableChangeMap_some,
+      variableChangeMap_some, Point.add_some hxy', Point.some.injEq, slope_variableChange hs ht,
+      addX_variableChange hs ht, addY_variableChange hs ht]
+    exact ⟨rfl, rfl⟩
+
+/-- **The additive equivalence** between the affine points of `W' = C • W` and those of `W`, for
+a change of variables with `s = t = 0`. -/
+def variableChangeEquiv (hs : C.s = 0) (ht : C.t = 0) (h : W' = C • W) :
+    W'.toAffine.Point ≃+ W.toAffine.Point where
+  toFun := variableChangeMap hs ht h
+  invFun := variableChangeUnmap hs ht h
+  left_inv := by
+    subst h
+    rintro (_ | ⟨x, y, hn⟩)
+    · rfl
+    · have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+      refine (Point.some.injEq _ _ _ _ _ _).mpr ⟨?_, ?_⟩
+      · rw [add_sub_cancel_right, mul_div_cancel_left₀ _ (pow_ne_zero 2 hu)]
+      · rw [mul_div_cancel_left₀ _ (pow_ne_zero 3 hu)]
+  right_inv := by
+    subst h
+    rintro (_ | ⟨x, y, hn⟩)
+    · rfl
+    · have hu : (C.u : F) ≠ 0 := C.u.ne_zero
+      refine (Point.some.injEq _ _ _ _ _ _).mpr ⟨?_, ?_⟩
+      · rw [mul_div_cancel₀ _ (pow_ne_zero 2 hu), sub_add_cancel]
+      · rw [mul_div_cancel₀ _ (pow_ne_zero 3 hu)]
+  map_add' := variableChangeMap_add hs ht h
+
+end VariableChange
 
 end CompElliptic.CurveForms.Montgomery
