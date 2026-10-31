@@ -78,7 +78,7 @@ jobs:
             CompElliptic/Fields/BLS12_381.lean CompElliptic/Curves/JubjubWitnesses.lean
 
   sage-checks:
-    name: sage checks - Vélu and twisted Edwards certificates, Weil-derivation identities
+    name: sage checks - Vélu, twisted Edwards, Montgomery certificates, Weil-derivation identities
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -104,10 +104,14 @@ jobs:
       - name: Regenerate the twisted Edwards certificate section
         shell: bash -el {0}
         run: sage scripts/gen_ctedwards_certificates.sage
+      - name: Regenerate the twisted Edwards to Montgomery certificate section
+        shell: bash -el {0}
+        run: sage scripts/gen_ctedwards_montgomery_certificates.sage
       - name: Fail if the regenerated sections differ from the committed ones
         run: >-
           git diff --exit-code CompElliptic/Isogenies/VeluCertificates.lean
           CompElliptic/CurveForms/CtEdwardsCertificates.lean
+          CompElliptic/CurveForms/CtEdwardsMontgomeryCertificates.lean
       - name: Check the design doc's symbolic identities and certificates
         shell: bash -el {0}
         run: sage scripts/check_weil_derivations.sage
