@@ -18,6 +18,7 @@ import CompElliptic.CurveForms.ShortWeierstrass
 import CompElliptic.CurveForms.Montgomery
 import CompElliptic.CurveForms.CtEdwardsCertificates
 import CompElliptic.CurveForms.CtEdwards
+import CompElliptic.CurveForms.CtEdwardsMontgomeryCertificates
 import CompElliptic.CurveOrder
 import CompElliptic.Isogenies.ThreeIsogeny
 import CompElliptic.Curves.Pasta
