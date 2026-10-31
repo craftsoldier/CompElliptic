@@ -127,6 +127,10 @@ Early work in progress. Present so far:
   `CtEdwardsCurve` / `CtEdwardsPoint` types — completeness, closure, and the full
   `AddCommGroup (CtEdwardsPoint E)` instance, with associativity by a generated polynomial
   certificate (`CompElliptic/CurveForms/CtEdwards.lean`);
+- the Montgomery curve form, given to Mathlib as a `WeierstrassCurve`, and a computable additive
+  equivalence between the points of any complete twisted Edwards curve and the affine points of
+  its Montgomery model, by generated polynomial certificates
+  (`CompElliptic/CurveForms/Montgomery.lean`, `CompElliptic/CurveForms/CtEdwardsMontgomery.lean`);
 - Pallas and Vesta as concrete `SWCurve` instances (`CompElliptic/Curves/Pasta.lean`);
 - a curve-form-agnostic `CoordinateSystem` abstraction — a carrier with a validity predicate, an
   equivalence on representatives, and computable operations — yielding a derived `AddCommGroup` on

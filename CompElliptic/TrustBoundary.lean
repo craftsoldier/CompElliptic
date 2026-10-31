@@ -16,6 +16,7 @@ import CompElliptic.Fields.BLS12_381
 import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.CtEdwards
 import CompElliptic.CurveForms.Montgomery
+import CompElliptic.CurveForms.CtEdwardsMontgomery
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -72,6 +73,9 @@ assert_axioms CompElliptic.CurveForms.Montgomery.isElliptic_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.equation_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.x_eq_zero_of_y_eq_zero
 assert_axioms CompElliptic.CurveForms.Montgomery.x_add_one_ne_zero
+assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_add
+assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.ofMontgomery_toMontgomery
+assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_ofMontgomery
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
@@ -120,6 +124,13 @@ assert_computable CompElliptic.CurveForms.ShortWeierstrass.instFintypeSWPoint +c
 assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.instFintype +choice
 assert_computable CompElliptic.Curves.Pasta.Pallas.fintypePoints +choice
 assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
+
+/-! ## Computable maps between curve forms
+
+`Classical.choice` enters only through the erased proof fields of the equivalence; the plain-`def`
+check certifies that its maps are compiled code. -/
+
+assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEquiv +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 
