@@ -41,7 +41,9 @@ Hasse's theorem, which Mathlib lacks for `WeierstrassCurve`.
   its twist by a non-square have exactly 2·#F + 2 points between them (`card_add_card_twist`,
   again by counting roots for each x). So a twist point not killed by 2·#F + 2 − 2·h·r rules
   out 2·h·r (`card_eq_of_twist_witness`). Once the order is pinned, `card_torsionBy_eq` and
-  `eq_torsionBy_of_card_eq` make the r-torsion the unique subgroup of order r.
+  `eq_torsionBy_of_card_eq` make the r-torsion the unique subgroup of order r, and
+  multiplication by h maps the group onto it, exactly h-to-1 (`range_nsmul_eq_torsionBy`,
+  `card_nsmul_fibre`).
 
 This is an application of the *Independently re-checkable trust* principle: no general theorem is
 assumed, and all that a caller must discharge are closed numeric facts about #F and r, verifiable
@@ -156,6 +158,77 @@ theorem eq_torsionBy_of_card_eq {G : Type*} [AddCommGroup G] [Finite G] {r h : �
     rw [hK] at this
     exact AddSubgroup.torsionBy.nsmul_iff.mpr (congrArg Subtype.val this)
   exact AddSubgroup.eq_of_le_of_card_ge hle (by rw [card_torsionBy_eq hr hcard hh, hK])
+
+/-! ## The cofactor map (finite abelian groups)
+
+Under the same hypotheses, `#G = h·r` with `r` prime and `r ∤ h`, multiplication by the cofactor
+`h` maps `G` onto `G[r]`: into it by Lagrange, and onto it because `h` is invertible modulo `r`.
+Its kernel `G[h]` then has `h` elements, so each point of `G[r]` is `h • P` for exactly `h`
+points `P`. -/
+
+/-- `h • P` is killed by `r` when `#G = h·r`. -/
+theorem nsmul_mem_torsionBy {G : Type*} [AddCommGroup G] {r h : ℕ}
+    (hcard : Nat.card G = h * r) (P : G) : h • P ∈ AddSubgroup.torsionBy G (r : ℤ) := by
+  rw [AddSubgroup.torsionBy.nsmul_iff, smul_smul, mul_comm, ← hcard]
+  exact card_nsmul_eq_zero'
+
+/-- Every point killed by `r` is `h • P` for some `P`, when `h` and `r` are coprime: with
+`h·a + r·b = 1`, `P = a • Q`. -/
+theorem exists_nsmul_eq_of_mem_torsionBy {G : Type*} [AddCommGroup G] {r h : ℕ}
+    (hcop : Nat.Coprime h r) {Q : G} (hQ : Q ∈ AddSubgroup.torsionBy G (r : ℤ)) :
+    ∃ P, h • P = Q := by
+  have e := Nat.gcd_eq_gcd_ab h r
+  rw [hcop.gcd_eq_one, Nat.cast_one] at e
+  have hrQ : (r : ℤ) • Q = 0 := by
+    rw [natCast_zsmul]; exact AddSubgroup.torsionBy.nsmul_iff.mp hQ
+  refine ⟨Nat.gcdA h r • Q, ?_⟩
+  rw [← natCast_zsmul, smul_smul]
+  calc ((h : ℤ) * Nat.gcdA h r) • Q = (1 - (r : ℤ) * Nat.gcdB h r) • Q := by
+        congr 1; linear_combination -e
+    _ = Q := by
+        rw [sub_zsmul, one_zsmul, mul_comm, mul_zsmul, hrQ, zsmul_zero, neg_zero, _root_.add_zero]
+
+/-- **`h • _` maps `G` onto `G[r]`**, when `#G = h·r` with `r` prime and `r ∤ h`. -/
+theorem range_nsmul_eq_torsionBy {G : Type*} [AddCommGroup G] {r h : ℕ} (hr : r.Prime)
+    (hcard : Nat.card G = h * r) (hh : ¬ r ∣ h) :
+    (nsmulAddMonoidHom (α := G) h).range = AddSubgroup.torsionBy G (r : ℤ) := by
+  have hcop : Nat.Coprime h r := ((Nat.Prime.coprime_iff_not_dvd hr).2 hh).symm
+  ext Q
+  constructor
+  · rintro ⟨P, rfl⟩; exact nsmul_mem_torsionBy hcard P
+  · intro hQ; obtain ⟨P, hP⟩ := exists_nsmul_eq_of_mem_torsionBy hcop hQ; exact ⟨P, hP⟩
+
+/-- **The `h`-torsion has `h` elements**, when `#G = h·r` with `r` prime and `r ∤ h`: it is the
+kernel of `h • _`, whose image `G[r]` has `r` elements. -/
+theorem card_torsionBy_cofactor {G : Type*} [AddCommGroup G] [Finite G] {r h : ℕ}
+    (hr : r.Prime) (hcard : Nat.card G = h * r) (hh : ¬ r ∣ h) :
+    Nat.card (AddSubgroup.torsionBy G (h : ℤ)) = h := by
+  set φ := nsmulAddMonoidHom (α := G) h
+  have hker : φ.ker = AddSubgroup.torsionBy G (h : ℤ) := by
+    ext P
+    rw [AddMonoidHom.mem_ker, AddSubgroup.torsionBy.nsmul_iff]
+    rfl
+  have e := AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup φ.ker
+  rw [Nat.card_congr (QuotientAddGroup.quotientKerEquivRange φ).toEquiv,
+    range_nsmul_eq_torsionBy hr hcard hh, card_torsionBy_eq hr hcard hh, hcard, mul_comm, hker] at e
+  exact (Nat.eq_of_mul_eq_mul_left hr.pos e).symm
+
+/-- **`h • _` is exactly `h`-to-`1` onto `G[r]`**, when `#G = h·r` with `r` prime and `r ∤ h`:
+each point of `G[r]` is `h • P` for exactly `h` points `P`, the coset of `G[h]` through one of
+them. -/
+theorem card_nsmul_fibre {G : Type*} [AddCommGroup G] [Finite G] {r h : ℕ} (hr : r.Prime)
+    (hcard : Nat.card G = h * r) (hh : ¬ r ∣ h) {Q : G}
+    (hQ : Q ∈ AddSubgroup.torsionBy G (r : ℤ)) : Nat.card {P : G // h • P = Q} = h := by
+  have hcop : Nat.Coprime h r := ((Nat.Prime.coprime_iff_not_dvd hr).2 hh).symm
+  obtain ⟨P₀, hP₀⟩ := exists_nsmul_eq_of_mem_torsionBy hcop hQ
+  refine (Nat.card_congr ?_).trans (card_torsionBy_cofactor hr hcard hh)
+  exact
+    { toFun := fun P => ⟨P.1 - P₀, AddSubgroup.torsionBy.nsmul_iff.mpr (by
+        rw [smul_sub, P.2, hP₀, sub_self])⟩
+      invFun := fun K => ⟨K.1 + P₀, by
+        rw [smul_add, hP₀, AddSubgroup.torsionBy.nsmul_iff.mp K.2, _root_.zero_add]⟩
+      left_inv := fun P => by ext; simp
+      right_inv := fun K => by ext; simp }
 
 /-! ## Layer 2: the fibre bound `#E(F) ≤ 2 · #F + 1` -/
 
