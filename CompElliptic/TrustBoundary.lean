@@ -64,6 +64,7 @@ assert_axioms CompElliptic.CurveOrder.card_torsionBy_eq
 assert_axioms CompElliptic.CurveOrder.eq_torsionBy_of_card_eq
 assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.runChain_sound
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.runChain
+assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.x_ne_of_addOrderOf
 assert_axioms CompElliptic.CurveForms.CtEdwards.complete
 assert_axioms CompElliptic.CurveForms.CtEdwards.onCurve_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.add_assoc
@@ -135,6 +136,7 @@ check certifies that its maps are compiled code. -/
 
 assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEquiv +choice
 assert_computable CompElliptic.CurveForms.Montgomery.variableChangeEquiv +choice
+assert_computable CompElliptic.CurveForms.ShortWeierstrass.SWPoint.equivPoint +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 
