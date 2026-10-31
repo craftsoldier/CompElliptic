@@ -123,6 +123,10 @@ Early work in progress. Present so far:
   `SWPoint` types — closure, commutativity, associativity, and the full `AddCommGroup (SWPoint E)`
   instance (including scalar multiplication), with associativity by transport to Mathlib's
   `WeierstrassCurve.Affine.Point` group (`CompElliptic/CurveForms/ShortWeierstrass.lean`);
+- a computable complete twisted Edwards affine group law with correct-by-construction
+  `CtEdwardsCurve` / `CtEdwardsPoint` types — completeness, closure, and the full
+  `AddCommGroup (CtEdwardsPoint E)` instance, with associativity by a generated polynomial
+  certificate (`CompElliptic/CurveForms/CtEdwards.lean`);
 - Pallas and Vesta as concrete `SWCurve` instances (`CompElliptic/Curves/Pasta.lean`);
 - a curve-form-agnostic `CoordinateSystem` abstraction — a carrier with a validity predicate, an
   equivalence on representatives, and computable operations — yielding a derived `AddCommGroup` on
