@@ -97,7 +97,8 @@ assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
 
 The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin; the
 ctEdwards curve, its equivalence with the short-Weierstrass model and the specification's
-conversion maps. -/
+conversion maps; and, on the ctEdwards curve, the order, `𝕁⁽ʳ⁾`, the facts about small order and
+the injectivity of `u` on `𝕁⁽ʳ⁾`. -/
 
 assert_axioms CompElliptic.Curves.Jubjub.d_eq
 assert_axioms CompElliptic.Curves.Jubjub.montA_eq
@@ -120,6 +121,18 @@ assert_axioms CompElliptic.Curves.Jubjub.montgomery_eq_swChange_smul
 assert_axioms CompElliptic.Curves.Jubjub.swEquiv_eq_ctEdwardsToMont
 assert_axioms CompElliptic.Curves.Jubjub.swEquiv_symm_eq_montToCtEdwards
 assert_axioms CompElliptic.Curves.Jubjub.ctEdwardsToMont_fst_ne
+assert_axioms CompElliptic.Curves.Jubjub.card_eq
+assert_axioms CompElliptic.Curves.Jubjub.card_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.eq_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_mem_primeOrderSubgroup_iff
+assert_axioms CompElliptic.Curves.Jubjub.range_eight_nsmul
+assert_axioms CompElliptic.Curves.Jubjub.card_eight_nsmul_fibre
+assert_axioms CompElliptic.Curves.Jubjub.dvd_addOrderOf_of_eight_nsmul_ne_zero
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_eq_zero_iff_u_eq_zero
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_ne_zeroNegOne
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_u_eq_zero_iff
+assert_axioms CompElliptic.Curves.Jubjub.negV_not_mem_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.u_injOn_primeOrderSubgroup
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 

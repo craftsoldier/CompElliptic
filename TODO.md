@@ -24,7 +24,7 @@ The [design principles](README.md#design-principles) followed by this library ar
   `CompElliptic/CurveForms/` holds one module per curve *form* (`ShortWeierstrass`, `CtEdwards`
   and `Montgomery` now — Sapling's Jubjub curve has twisted-Edwards and Montgomery forms), and
   `CompElliptic/Curves/` holds specific *named* curves as
-  instances (`Pasta` = Pallas/Vesta now; `Jubjub` later). `CompElliptic/Fields/` holds the fields.
+  instances (`Pasta` = Pallas/Vesta, and `Jubjub`). `CompElliptic/Fields/` holds the fields.
   (All three directory names plural.) Within a form module, layer: raw computable kernel (functions
   on `F × F`) → rich bundled types (`SWCurve` / `SWPoint`) → group structure; concrete-curve
   instances live in `Curves/`.
@@ -149,8 +149,9 @@ types + transport) has been consolidated into these and removed.
 - [x] Small-cofactor variant (`#G = h·r` for known `h`): witnesses of orders `h` and `r` give
   `h·r ∣ #E`, and a point of the quadratic twist rules out `2·h·r` through the twist identity
   `#E + #E' = 2·#F + 2` (`card_add_card_twist`, `card_eq_of_twist_witness`). Once the order is
-  pinned, the order-`r` subgroup is unique (`card_torsionBy_eq`, `eq_torsionBy_of_card_eq`). Used
-  for Jubjub (cofactor 8); standard axioms only.
+  pinned, the order-`r` subgroup is unique (`card_torsionBy_eq`, `eq_torsionBy_of_card_eq`), and
+  multiplication by `h` maps the group onto it exactly `h`-to-`1` (`range_nsmul_eq_torsionBy`,
+  `card_nsmul_fibre`). Used for Jubjub (cofactor 8); standard axioms only.
 
 ## CompElliptic — other forms & the group abstraction (later)
 
@@ -237,10 +238,17 @@ types + transport) has been consolidated into these and removed.
   double-and-add chains of slopes checked by `runChain` (`SWPoint.runChain_sound`), evaluated by
   the kernel with no `native_decide`. The same checker could replace the Pasta witnesses'
   `native_decide`.
-- [ ] Jubjub in twisted Edwards and Montgomery form, and the group isomorphism to the
-  short-Weierstrass model. The twisted Edwards and Montgomery forms and the equivalence between
-  them exist; Jubjub as a twisted Edwards curve, and its link to the short-Weierstrass model, do
-  not yet.
+- [x] Jubjub as a complete twisted Edwards curve (`Curves/Jubjub.lean`, `Jubjub.curve`), and the
+  computable additive equivalence `Jubjub.swEquiv` with the short-Weierstrass model: the twisted
+  Edwards to Montgomery equivalence, then the change of variables `x = s²·x' + A/3`, `y = s³·y'`
+  with `s = √⁺(−40964)` (`Montgomery.variableChangeEquiv`), then `SWPoint.equivPoint`. The
+  specification's `CtEdwardsToMont` and `MontToCtEdwards` are this equivalence in `𝕄`'s
+  coordinates. Carried along it (`Curves/JubjubOrder.lean`): the order `8·r_𝕁`, `𝕁⁽ʳ⁾` and its
+  uniqueness, `P ↦ [8] P` onto `𝕁⁽ʳ⁾` exactly `8`-to-`1`, the small-order facts of §A.3.3.6, and
+  the injectivity of `u` on `𝕁⁽ʳ⁾` (§5.4.9.4). Distinct-`x` (§A.3.3.4) is
+  `SWPoint.x_ne_of_addOrderOf`, on any short-Weierstrass curve, with the Jubjub form
+  `Jubjub.ctEdwardsToMont_fst_ne`.
+- [ ] The Jubjub point encoding `repr_𝕁` / `abst_𝕁` (§5.4.9.3) in `Encodings/`.
 
 ## Tooling and conventions
 
@@ -285,7 +293,8 @@ order:
 - [ ] `add` (complete) — full case split.
 - [ ] `mul/incomplete` (`q_mul_1/2/3`) — double-and-add; **anchoring** of the incomplete-loop
   base (the NU6.2 variable-base soundness bug). Likely rests on `distinct_x_axis_symmetric` and
-  `odd_order_double_inj` from `Zcash/Math/{Curves,Groups}.lean`.
+  `odd_order_double_inj` from `Zcash/Math/{Curves,Groups}.lean`; the first is ported as
+  `SWPoint.x_ne_of_addOrderOf`.
 - [ ] `mul/complete` + `mul/overflow` + LSB — assembling `[k]·base` and the `k = α + t_q`
   overflow handling.
 - [ ] `mul_fixed` — "Running sum coordinates check" plus the `full_width` / `base_field_elem`
