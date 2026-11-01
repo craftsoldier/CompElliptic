@@ -310,6 +310,24 @@ theorem sqrt?_isSome_of_isSquare {F : Type*} [Field F] [Fintype F] [DecidableEq 
   · -- a ≠ 0 and the residue test failed: contradicted by Euler's criterion for a square.
     exact absurd (by rw [fpow_spec, ← hexp]; exact (FiniteField.isSquare_iff hchar h0).mp ha) h1
 
+/-- `sqrt?` with each root's defining equation attached: `some ⟨r, _⟩` with `r*r = a` exactly when
+`sqrt?` returns `some r` (`sqrtSub?_of_sqrt?`). A caller that builds data from the root, such as a
+point decoder, can then use the equation without matching on `sqrt?` itself. -/
+def sqrtSub? {F : Type*} [Field F] [Fintype F] [DecidableEq F] (d : TonelliShanks F) (a : F) :
+    Option {r : F // r * r = a} :=
+  match h : d.sqrt? a with
+  | none => none
+  | some r => some ⟨r, sqrt?_mul_self d h⟩
+
+/-- `sqrtSub?` returns the root `sqrt?` returns. -/
+theorem sqrtSub?_of_sqrt? {F : Type*} [Field F] [Fintype F] [DecidableEq F] (d : TonelliShanks F)
+    {a r : F} (h : d.sqrt? a = some r) : ∃ hr, d.sqrtSub? a = some ⟨r, hr⟩ := by
+  refine ⟨sqrt?_mul_self d h, ?_⟩
+  unfold sqrtSub?
+  split
+  · next h' => rw [h] at h'; exact absurd h' (Option.some_ne_none r)
+  · next r' h' => rw [h] at h'; obtain rfl := Option.some.inj h'; rfl
+
 /-- A valid `rootOfUnity` is a quadratic non-residue. It has full 2-power order, so its
 Euler power `rootOfUnity^((card-1)/2) = (rootOfUnity^(2^(twoAdicity-1)))^oddPart`
 evaluates to `(-1)^oddPart = -1`, whereas Euler's criterion gives `1` for a nonzero
