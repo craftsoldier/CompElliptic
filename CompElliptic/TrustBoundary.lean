@@ -142,6 +142,9 @@ assert_axioms CompElliptic.Curves.Jubjub.u_injOn_primeOrderSubgroup
 assert_axioms CompElliptic.Curves.Jubjub.toBytes_eq_LEBS2OSP
 assert_axioms CompElliptic.Curves.Jubjub.bits_of_lt
 assert_axioms CompElliptic.Curves.Jubjub.fromBytesPreZip216_toBytes
+assert_axioms CompElliptic.Curves.Jubjub.fromBytesPreZip216_spec
+assert_axioms CompElliptic.Curves.Jubjub.nonCanonical_iff
+assert_axioms CompElliptic.Curves.Jubjub.fromBytes_eq_none_iff
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
@@ -183,6 +186,8 @@ code. -/
 assert_computable CompElliptic.Curves.Jubjub.toBytes +choice
 assert_computable CompElliptic.Curves.Jubjub.fromBytesPreZip216 +choice
 assert_computable CompElliptic.JubjubLenientEncoding +choice
+assert_computable CompElliptic.Curves.Jubjub.fromBytes +choice
+assert_computable CompElliptic.JubjubEncoding +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 

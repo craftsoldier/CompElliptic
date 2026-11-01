@@ -4,7 +4,7 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Julian Abraham
 -/
-import CompElliptic.Curves.Jubjub
+import CompElliptic.Curves.JubjubOrder
 import CompElliptic.Encoding
 import CompElliptic.Encodings.Common
 import CompElliptic.Fields.BLS12_381
@@ -28,8 +28,18 @@ non-canonical encodings of [ZIP 216](https://zips.z.cash/zip-0216), as does the 
 `AffinePoint::from_bytes_pre_zip216_compatibility`, so it is the decoder of a `LenientEncoding`
 (`JubjubLenientEncoding`).
 
-The fixtures at the end check `toBytes` and `fromBytesPreZip216` against the `jubjub` crate's own
-test vectors, by kernel evaluation.
+[ZIP 216](https://zips.z.cash/zip-0216) requires rejecting those two encodings at the places
+where Jubjub points are encoded in the consensus protocol and in addresses and keys, and the
+crate's `AffinePoint::from_bytes`, the decoder `sapling-crypto` and Zebra use, rejects them:
+`fromBytes` is `fromBytesPreZip216` with ZIP 216's check that the point re-encodes to
+the input, the decoder of the canonical encoding `JubjubEncoding`
+(`LenientEncoding.toCanonical`). `nonCanonical_iff` proves that the two encodings ZIP 216 names,
+`zip216Identity` and `zip216NegOne`, are the only ones `fromBytesPreZip216` accepts and `toBytes`
+does not produce, so `fromBytes` rejects exactly those two besides what `fromBytesPreZip216`
+rejects (`fromBytes_eq_none_iff`).
+
+The fixtures check `toBytes`, `fromBytesPreZip216` and `fromBytes` against the `jubjub` crate's
+own test vectors, by kernel evaluation.
 -/
 
 namespace CompElliptic
@@ -281,5 +291,164 @@ example : fromBytesPreZip216 (Vector.mk
       225, 126, 129, 186, 157, 148, 162, 219, 51, 156, 199] rfl) =
     some ((3 : ℕ) • G8) := by
   decide +kernel
+
+end CompElliptic.Curves.Jubjub
+
+namespace CompElliptic.Curves.Jubjub
+
+open CompElliptic CompElliptic.CurveForms.CtEdwards CompElliptic.Fields.BLS12_381
+
+/-! ## The canonical encoding (ZIP 216) -/
+
+/-- What `fromBytesPreZip216` returns: the range check passed, `v` is the low 255 bits, and `u` is
+a root `r` of `uSq v`, or its negation, by the top bit. -/
+theorem fromBytesPreZip216_spec {b : Vector UInt8 32} {P : CtEdwardsPoint curve}
+    (h : fromBytesPreZip216 b = some P) :
+    LEOS2IP b % 2 ^ 255 < BLS12_381_SCALAR_CARD ∧
+      P.v = ((LEOS2IP b % 2 ^ 255 : ℕ) : BLS12381ScalarField) ∧
+      ∃ r, r * r = uSq P.v ∧ P.u = if r.val % 2 = LEOS2IP b / 2 ^ 255 then r else -r := by
+  unfold fromBytesPreZip216 at h
+  split_ifs at h with hlt
+  unfold decodeAt at h
+  obtain ⟨⟨r, hr⟩, -, hP⟩ := Option.map_eq_some_iff.mp h
+  subst hP
+  exact ⟨hlt, rfl, r, hr, rfl⟩
+
+/-- The non-canonical encoding of the identity `(0, 1)` that ZIP 216 names:
+`I2LEOSP₂₅₆(2^255 + 1)`. -/
+def zip216Identity : Vector UInt8 32 := I2LEOSP 256 ⟨2 ^ 255 + 1, by decide⟩
+
+/-- The non-canonical encoding of `(0, −1)` that ZIP 216 names: `I2LEOSP₂₅₆(2^255 + q − 1)`. -/
+def zip216NegOne : Vector UInt8 32 :=
+  I2LEOSP 256 ⟨2 ^ 255 + BLS12_381_SCALAR_CARD - 1, by decide⟩
+
+/-- **The non-canonical encodings** of [ZIP 216](https://zips.z.cash/zip-0216): the byte strings
+that `fromBytesPreZip216` decodes but `toBytes` does not produce are exactly `zip216Identity` and
+`zip216NegOne`. A decoded `u` of the wrong parity must be `0`, so the point is `(0, ±1)` and the top
+bit is set. -/
+theorem nonCanonical_iff (b : Vector UInt8 32) :
+    (∃ P, fromBytesPreZip216 b = some P ∧ toBytes P ≠ b) ↔
+      b = zip216Identity ∨ b = zip216NegOne := by
+  constructor
+  · rintro ⟨P, hP, hne⟩
+    obtain ⟨hlt, hv, r, -, hu⟩ := fromBytesPreZip216_spec hP
+    have hq : BLS12_381_SCALAR_CARD < 2 ^ 255 := by decide
+    have hq2 : BLS12_381_SCALAR_CARD % 2 = 1 := by decide
+    have hblt : LEOS2IP b < 2 ^ 256 := LEOS2IP_lt b
+    have hs1 : LEOS2IP b / 2 ^ 255 ≤ 1 := by omega
+    have hval : P.v.val = LEOS2IP b % 2 ^ 255 := by rw [hv, ZMod.val_natCast_of_lt hlt]
+    -- If `u` had the parity of the top bit, `P` would re-encode to `b`.
+    have hpar : P.u.val % 2 ≠ LEOS2IP b / 2 ^ 255 := by
+      intro hpu
+      apply hne
+      rw [← I2LEOSP_LEOS2IP b]
+      unfold toBytes
+      congr 1
+      apply Fin.ext
+      show P.v.val + (P.u.val % 2) * 2 ^ 255 = LEOS2IP b
+      rw [hval, hpu]
+      omega
+    -- So `u = −r` with both of the wrong parity, which forces `r = 0`, `u = 0` and a set top bit.
+    have hu0 : P.u = 0 := by
+      split_ifs at hu with hrs
+      · exact absurd (hu ▸ hrs) hpar
+      · by_contra hu0
+        have hr0 : r ≠ 0 := fun h => hu0 (by rw [hu, h, neg_zero])
+        have hrv : 0 < r.val := by rwa [Nat.pos_iff_ne_zero, ne_eq, ZMod.val_eq_zero]
+        have hrlt : r.val < BLS12_381_SCALAR_CARD := ZMod.val_lt r
+        rw [hu, ZMod.neg_val, if_neg hr0] at hpar
+        omega
+    have hs : LEOS2IP b / 2 ^ 255 = 1 := by
+      rw [hu0, ZMod.val_zero] at hpar; omega
+    have hn : LEOS2IP b = P.v.val + 2 ^ 255 := by omega
+    rcases (u_eq_zero_iff P.onCurve).mp hu0 with h1 | h1
+    · left
+      rw [← I2LEOSP_LEOS2IP b]
+      unfold zip216Identity
+      congr 1
+      apply Fin.ext
+      show LEOS2IP b = 2 ^ 255 + 1
+      rw [hn, h1, ZMod.val_one]
+      omega
+    · right
+      rw [← I2LEOSP_LEOS2IP b]
+      unfold zip216NegOne
+      congr 1
+      apply Fin.ext
+      show LEOS2IP b = 2 ^ 255 + BLS12_381_SCALAR_CARD - 1
+      rw [hn, h1, ZMod.neg_val, if_neg one_ne_zero, ZMod.val_one]
+      omega
+  · rintro (rfl | rfl)
+    · exact ⟨0, by decide, by decide⟩
+    · exact ⟨zeroNegOne, by decide, by decide⟩
+
+end CompElliptic.Curves.Jubjub
+
+namespace CompElliptic
+
+open CompElliptic.CurveForms.CtEdwards CompElliptic.Curves.Jubjub
+
+/-- The canonical encoding of Jubjub points: `toBytes`, and `abst_𝕁` with ZIP 216's check that the
+point re-encodes to the input. -/
+def JubjubEncoding : CanonicalEncoding (CtEdwardsPoint curve) (Vector UInt8 32) :=
+  JubjubLenientEncoding.toCanonical
+
+end CompElliptic
+
+namespace CompElliptic.Curves.Jubjub
+
+open CompElliptic.CurveForms.CtEdwards CompElliptic.Fields.BLS12_381
+
+/-- The decoder with ZIP 216's check, `JubjubEncoding`'s. Matches the `jubjub` crate's
+`AffinePoint::from_bytes`. -/
+def fromBytes (b : Vector UInt8 32) : Option (CtEdwardsPoint curve) := JubjubEncoding.decode b
+
+/-- `fromBytes` is `fromBytesPreZip216`, keeping the point only if it re-encodes to the input. -/
+theorem fromBytes_eq (b : Vector UInt8 32) :
+    fromBytes b = (fromBytesPreZip216 b).filter fun P => toBytes P = b := rfl
+
+/-- **What `fromBytes` rejects**: a byte string exactly when
+`fromBytesPreZip216` does, or it is one of the two non-canonical encodings of ZIP 216. -/
+theorem fromBytes_eq_none_iff (b : Vector UInt8 32) :
+    fromBytes b = none ↔
+      fromBytesPreZip216 b = none ∨ b = zip216Identity ∨ b = zip216NegOne := by
+  rw [fromBytes_eq]
+  rcases h : fromBytesPreZip216 b with _ | P
+  · simp
+  · rw [← nonCanonical_iff]
+    simp only [Option.filter_some, reduceCtorEq, false_or]
+    constructor
+    · intro h0
+      refine ⟨P, h, fun e => ?_⟩
+      simp [e] at h0
+    · rintro ⟨P', hP', hne⟩
+      rw [h] at hP'
+      obtain rfl := Option.some.inj hP'
+      simp [hne]
+
+/-! ### Fixtures against the `jubjub` crate (ZIP 216)
+
+The crate's `test_zip_216`
+(<https://github.com/zkcrypto/jubjub/blob/0cabeca668d89f9e8edbb3cbccdefeffdf21f651/src/lib.rs#L1903>)
+lists the two non-canonical encodings, quoted below verbatim in hex, and checks that `from_bytes`
+rejects them while `from_bytes_pre_zip216_compatibility` accepts them. -/
+
+example : zip216Identity.toList =
+    [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x80] := by
+  decide
+
+example : zip216NegOne.toList =
+    [0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xfe, 0x5b, 0xfe, 0xff, 0x02, 0xa4, 0xbd,
+     0x53, 0x05, 0xd8, 0xa1, 0x09, 0x08, 0xd8, 0x39, 0x33, 0x48, 0x7d, 0x9d, 0x29, 0x53, 0xa7,
+     0xed, 0xf3] := by
+  decide
+
+example : fromBytesPreZip216 zip216Identity = some 0 := by decide
+example : fromBytesPreZip216 zip216NegOne = some zeroNegOne := by decide
+example : fromBytes zip216Identity = none := by decide
+example : fromBytes zip216NegOne = none := by decide
+example : fromBytes (toBytes uThreePoint) = some uThreePoint := by decide +kernel
 
 end CompElliptic.Curves.Jubjub

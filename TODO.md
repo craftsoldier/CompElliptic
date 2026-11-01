@@ -248,7 +248,11 @@ types + transport) has been consolidated into these and removed.
   the injectivity of `u` on `𝕁⁽ʳ⁾` (§5.4.9.4). Distinct-`x` (§A.3.3.4) is
   `SWPoint.x_ne_of_addOrderOf`, on any short-Weierstrass curve, with the Jubjub form
   `Jubjub.ctEdwardsToMont_fst_ne`.
-- [ ] The Jubjub point encoding `repr_𝕁` / `abst_𝕁` (§5.4.9.3) in `Encodings/`.
+- [x] The Jubjub point encoding (`Encodings/Jubjub.lean`): `toBytes` (`repr_𝕁` packed into bytes),
+  `fromBytesPreZip216` (`abst_𝕁`, lenient) and `fromBytes` (with ZIP 216's check), as
+  `JubjubLenientEncoding` and `JubjubEncoding` (`LenientEncoding.toCanonical`); `nonCanonical_iff`
+  and `fromBytes_eq_none_iff`; fixtures against the `jubjub` crate's
+  `test_serialization_consistency` and `test_zip_216`, by kernel `decide`.
 
 ## Tooling and conventions
 
