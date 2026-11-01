@@ -201,9 +201,9 @@ types + transport) has been consolidated into these and removed.
     Tonelli–Shanks; soundness and completeness both proved). Reference for both directions:
     `~/zecc/zcash-test-vectors` (`zcash_test_vectors/orchard/pallas.py`, `Point.from_bytes`), and
     `pasta_curves` `curves.rs` affine `from_bytes`/`to_bytes`.
-  - Endianness-bearing bit/byte primitives (`I2LEOSP` / `LEOS2IP` done; `I2LEBSP` / `LEBS2OSP` per
-    spec `endian`) as distinct bit-/byte-sequence types — bit ordering is a mistake class (Sapling
-    testnet bug);
+  - Endianness-bearing bit/byte primitives (`I2LEOSP` / `LEOS2IP`, `I2LEBSP` / `LEBS2IP` /
+    `LEBS2OSP` done, per spec `endian`) as distinct bit-/byte-sequence types — bit ordering is a
+    mistake class (Sapling testnet bug);
     byte-oriented protocols served directly (no forced bit detour).
   - Gotcha: `Valid` (`OnCurve ∨ · = (0, 0)`) is a plain `def`, NOT auto-`Decidable`, so a decision
     procedure can't synthesize the instance for the whole disjunction. Construct on-curve test points

@@ -17,6 +17,7 @@ import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.CtEdwards
 import CompElliptic.CurveForms.Montgomery
 import CompElliptic.CurveForms.CtEdwardsMontgomery
+import CompElliptic.Encodings.Common
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -85,6 +86,9 @@ assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.ofMontgomery_toMo
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_ofMontgomery
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
+assert_axioms CompElliptic.LEOS2IP_I2LEOSP
+assert_axioms CompElliptic.I2LEOSP_LEOS2IP
+assert_axioms CompElliptic.LEBS2OSP_I2LEBSP
 
 /-! ## Concrete closed facts checked by the kernel — standard axioms only -/
 
