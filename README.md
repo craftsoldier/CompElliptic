@@ -155,6 +155,10 @@ Early work in progress. Present so far:
 - a computable Tonelli–Shanks square root for prime fields, soundness and completeness proved, with
   `pallasBase` / `vestaBase` instances (`CompElliptic/Fields/Sqrt.lean`);
 - the compressed Pasta point encoding (`toBytes`) for Pallas and Vesta (`CompElliptic/Encodings/`);
+- the compressed Jubjub point encoding, as a `LenientEncoding` (the specification's `abst_𝕁`) and a
+  `CanonicalEncoding` (with ZIP 216's check), the two non-canonical encodings of ZIP 216 proved to
+  be the only ones, and fixtures against the `jubjub` crate's test vectors
+  (`CompElliptic/Encodings/Jubjub.lean`);
 - fast Vesta group arithmetic for computing with points rather than only reasoning about them —
   complete Renes–Costello–Batina projective addition, a windowed Pippenger multi-scalar
   multiplication and a scalar ladder, each proven to compute the affine group operation it replaces,

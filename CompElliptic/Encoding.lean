@@ -25,6 +25,10 @@ deliberate:
 `EncodingClass` is the shared interface (`encode` / `decode` / `encodek`); both structures are
 instances, so the tagged-depiction types below apply to either with prefix syntax.
 
+`LenientEncoding.toCanonical` makes a canonical encoding from a lenient one: decode, and keep the
+result only if it re-encodes to the depiction. This is the check ZIP 216 adds to Jubjub's lenient
+decoding.
+
 In Zcash, for example, the encodings (see
 [Zcash Protocol Specification §5.4.9](https://zips.z.cash/protocol/protocol.pdf#concretepairing))
 of Pallas and Vesta curve points are canonical; the encodings of Jubjub curve points were
@@ -261,5 +265,25 @@ theorem canonicalSet_eq_decodableSet : canonicalSet e = decodableSet e := by
     exact ⟨g, e.decode_canonical hg⟩
 
 end CanonicalEncoding
+
+namespace LenientEncoding
+
+variable {G D : Type*} [DecidableEq D]
+
+/-- The canonical encoding of a lenient encoding `e`: the same `encode`, and a `decode` that
+accepts a depiction only if `e.decode` accepts it and the result re-encodes to it. -/
+def toCanonical (e : LenientEncoding G D) : CanonicalEncoding G D where
+  encode := e.encode
+  decode r := (e.decode r).filter fun g => e.encode g = r
+  encodek g := by simp [e.encodek]
+  canonical {r g} h := by
+    simp only [Option.filter_eq_some_iff, decide_eq_true_eq] at h
+    exact h.2
+
+/-- `toCanonical`'s `decode`, unfolded. -/
+theorem toCanonical_decode (e : LenientEncoding G D) (r : D) :
+    e.toCanonical.decode r = (e.decode r).filter fun g => e.encode g = r := rfl
+
+end LenientEncoding
 
 end CompElliptic

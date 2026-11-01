@@ -201,9 +201,9 @@ types + transport) has been consolidated into these and removed.
     Tonelli–Shanks; soundness and completeness both proved). Reference for both directions:
     `~/zecc/zcash-test-vectors` (`zcash_test_vectors/orchard/pallas.py`, `Point.from_bytes`), and
     `pasta_curves` `curves.rs` affine `from_bytes`/`to_bytes`.
-  - Endianness-bearing bit/byte primitives (`I2LEOSP` / `LEOS2IP` done; `I2LEBSP` / `LEBS2OSP` per
-    spec `endian`) as distinct bit-/byte-sequence types — bit ordering is a mistake class (Sapling
-    testnet bug);
+  - Endianness-bearing bit/byte primitives (`I2LEOSP` / `LEOS2IP`, `I2LEBSP` / `LEBS2IP` /
+    `LEBS2OSP` done, per spec `endian`) as distinct bit-/byte-sequence types — bit ordering is a
+    mistake class (Sapling testnet bug);
     byte-oriented protocols served directly (no forced bit detour).
   - Gotcha: `Valid` (`OnCurve ∨ · = (0, 0)`) is a plain `def`, NOT auto-`Decidable`, so a decision
     procedure can't synthesize the instance for the whole disjunction. Construct on-curve test points
@@ -248,7 +248,11 @@ types + transport) has been consolidated into these and removed.
   the injectivity of `u` on `𝕁⁽ʳ⁾` (§5.4.9.4). Distinct-`x` (§A.3.3.4) is
   `SWPoint.x_ne_of_addOrderOf`, on any short-Weierstrass curve, with the Jubjub form
   `Jubjub.ctEdwardsToMont_fst_ne`.
-- [ ] The Jubjub point encoding `repr_𝕁` / `abst_𝕁` (§5.4.9.3) in `Encodings/`.
+- [x] The Jubjub point encoding (`Encodings/Jubjub.lean`): `toBytes` (`repr_𝕁` packed into bytes),
+  `fromBytesPreZip216` (`abst_𝕁`, lenient) and `fromBytes` (with ZIP 216's check), as
+  `JubjubLenientEncoding` and `JubjubEncoding` (`LenientEncoding.toCanonical`); `nonCanonical_iff`
+  and `fromBytes_eq_none_iff`; fixtures against the `jubjub` crate's
+  `test_serialization_consistency` and `test_zip_216`, by kernel `decide`.
 
 ## Tooling and conventions
 

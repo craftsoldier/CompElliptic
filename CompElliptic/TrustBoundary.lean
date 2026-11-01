@@ -17,6 +17,8 @@ import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.CtEdwards
 import CompElliptic.CurveForms.Montgomery
 import CompElliptic.CurveForms.CtEdwardsMontgomery
+import CompElliptic.Encodings.Common
+import CompElliptic.Encodings.Jubjub
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -85,6 +87,10 @@ assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.ofMontgomery_toMo
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_ofMontgomery
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
+assert_axioms CompElliptic.Fields.TonelliShanks.sqrtSub?_of_sqrt?
+assert_axioms CompElliptic.LEOS2IP_I2LEOSP
+assert_axioms CompElliptic.I2LEOSP_LEOS2IP
+assert_axioms CompElliptic.LEBS2OSP_I2LEBSP
 
 /-! ## Concrete closed facts checked by the kernel — standard axioms only -/
 
@@ -97,8 +103,8 @@ assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
 
 The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin; the
 ctEdwards curve, its equivalence with the short-Weierstrass model and the specification's
-conversion maps; and, on the ctEdwards curve, the order, `𝕁⁽ʳ⁾`, the facts about small order and
-the injectivity of `u` on `𝕁⁽ʳ⁾`. -/
+conversion maps; on the ctEdwards curve, the order, `𝕁⁽ʳ⁾`, the facts about small order and the
+injectivity of `u` on `𝕁⁽ʳ⁾`; and the compressed point encoding. -/
 
 assert_axioms CompElliptic.Curves.Jubjub.d_eq
 assert_axioms CompElliptic.Curves.Jubjub.montA_eq
@@ -133,6 +139,12 @@ assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_ne_zeroNegOne
 assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_u_eq_zero_iff
 assert_axioms CompElliptic.Curves.Jubjub.negV_not_mem_primeOrderSubgroup
 assert_axioms CompElliptic.Curves.Jubjub.u_injOn_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.toBytes_eq_LEBS2OSP
+assert_axioms CompElliptic.Curves.Jubjub.bits_of_lt
+assert_axioms CompElliptic.Curves.Jubjub.fromBytesPreZip216_toBytes
+assert_axioms CompElliptic.Curves.Jubjub.fromBytesPreZip216_spec
+assert_axioms CompElliptic.Curves.Jubjub.nonCanonical_iff
+assert_axioms CompElliptic.Curves.Jubjub.fromBytes_eq_none_iff
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
@@ -164,6 +176,18 @@ assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEqu
 assert_computable CompElliptic.CurveForms.Montgomery.variableChangeEquiv +choice
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.SWPoint.equivPoint +choice
 assert_computable CompElliptic.Curves.Jubjub.swEquiv +choice
+
+/-! ## Computable point encodings
+
+`Classical.choice` enters only through erased proofs (the range bound of the encoded integer, and
+the encodings' round-trip fields); the plain-`def` check certifies that the maps are compiled
+code. -/
+
+assert_computable CompElliptic.Curves.Jubjub.toBytes +choice
+assert_computable CompElliptic.Curves.Jubjub.fromBytesPreZip216 +choice
+assert_computable CompElliptic.JubjubLenientEncoding +choice
+assert_computable CompElliptic.Curves.Jubjub.fromBytes +choice
+assert_computable CompElliptic.JubjubEncoding +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 

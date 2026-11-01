@@ -17,9 +17,8 @@ A point `(x, y)` encodes as the 32-byte little-endian octet string of `x` with t
 encodes as 32 zero bytes — which falls out of the same formula. Matches `pasta_curves`' affine
 `GroupEncoding::to_bytes`.
 
-This file covers the *encode* direction (`toBytes`). The partial decode (`abst`), the assembly
-into named `CanonicalEncoding` values (`PallasEncoding` / `VestaEncoding`), and the spec-named
-bit/byte primitives (`I2LEBSP` / `LEBS2OSP`) come next.
+This file covers the *encode* direction (`toBytes`). The partial decode (`abst`) and the
+assembly into named `CanonicalEncoding` values (`PallasEncoding` / `VestaEncoding`) come next.
 
 Note on naming: the spec's `repr_P` outputs a *bit* sequence (`𝔹^[ℓ]`); our encoding outputs
 *bytes* (`Vector UInt8 32`), a different type, so we deliberately do **not** call it `repr`.
