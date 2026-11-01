@@ -119,10 +119,14 @@ Early work in progress. Present so far:
 
 - the Pasta (Pallas/Vesta) base and scalar prime fields, with machine-verified Pratt primality
   certificates (`CompElliptic/Fields/Pasta.lean`);
+- the BLS12-381 scalar field (the Jubjub base field) and the Jubjub scalar field, with
+  machine-verified Pratt primality certificates (`CompElliptic/Fields/BLS12_381.lean`,
+  `CompElliptic/Fields/Jubjub.lean`);
 - a computable short-Weierstrass affine group law with correct-by-construction `SWCurve` /
   `SWPoint` types — closure, commutativity, associativity, and the full `AddCommGroup (SWPoint E)`
   instance (including scalar multiplication), with associativity by transport to Mathlib's
-  `WeierstrassCurve.Affine.Point` group (`CompElliptic/CurveForms/ShortWeierstrass.lean`);
+  `WeierstrassCurve.Affine.Point` group, a computable additive equivalence with that group, and
+  the curve fact behind the Distinct-`x` theorem (`CompElliptic/CurveForms/ShortWeierstrass.lean`);
 - a computable complete twisted Edwards affine group law with correct-by-construction
   `CtEdwardsCurve` / `CtEdwardsPoint` types — completeness, closure, and the full
   `AddCommGroup (CtEdwardsPoint E)` instance, with associativity by a generated polynomial
@@ -130,8 +134,17 @@ Early work in progress. Present so far:
 - the Montgomery curve form, given to Mathlib as a `WeierstrassCurve`, and a computable additive
   equivalence between the points of any complete twisted Edwards curve and the affine points of
   its Montgomery model, by generated polynomial certificates
-  (`CompElliptic/CurveForms/Montgomery.lean`, `CompElliptic/CurveForms/CtEdwardsMontgomery.lean`);
+  (`CompElliptic/CurveForms/Montgomery.lean`, `CompElliptic/CurveForms/CtEdwardsMontgomery.lean`),
+  and computable additive equivalences for the changes of variables `x = u²·x' + r`, `y = u³·y'`
+  between Mathlib Weierstrass curves (`CompElliptic/CurveForms/Montgomery.lean`);
 - Pallas and Vesta as concrete `SWCurve` instances (`CompElliptic/Curves/Pasta.lean`);
+- Jubjub as a complete twisted Edwards curve and as a short-Weierstrass curve, with a computable
+  additive equivalence between the two which, written in the coordinates of the Montgomery curve
+  `𝕄`, is the specification's ctEdwards–Montgomery conversion; its order `8·r_𝕁` and unique
+  subgroup of order `r_𝕁`, the cofactor map onto it, the facts about points of small order that
+  the specification relies on, the injectivity of the `u`-coordinate on the prime-order subgroup,
+  and Distinct-`x` in `𝕄`'s coordinates (`CompElliptic/Curves/Jubjub.lean`,
+  `CompElliptic/Curves/JubjubOrder.lean`);
 - a curve-form-agnostic `CoordinateSystem` abstraction — a carrier with a validity predicate, an
   equivalence on representatives, and computable operations — yielding a derived `AddCommGroup` on
   the quotient, with affine as the `Rel = Eq` instance (`CompElliptic/CoordinateSystem.lean`);

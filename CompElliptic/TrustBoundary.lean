@@ -62,8 +62,12 @@ assert_axioms CompElliptic.CurveOrder.card_add_card_twist
 assert_axioms CompElliptic.CurveOrder.card_eq_of_twist_witness
 assert_axioms CompElliptic.CurveOrder.card_torsionBy_eq
 assert_axioms CompElliptic.CurveOrder.eq_torsionBy_of_card_eq
+assert_axioms CompElliptic.CurveOrder.range_nsmul_eq_torsionBy
+assert_axioms CompElliptic.CurveOrder.card_torsionBy_cofactor
+assert_axioms CompElliptic.CurveOrder.card_nsmul_fibre
 assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.runChain_sound
 assert_computable CompElliptic.CurveForms.ShortWeierstrass.runChain
+assert_axioms CompElliptic.CurveForms.ShortWeierstrass.SWPoint.x_ne_of_addOrderOf
 assert_axioms CompElliptic.CurveForms.CtEdwards.complete
 assert_axioms CompElliptic.CurveForms.CtEdwards.onCurve_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.add_assoc
@@ -73,6 +77,9 @@ assert_axioms CompElliptic.CurveForms.Montgomery.isElliptic_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.equation_toW
 assert_axioms CompElliptic.CurveForms.Montgomery.x_eq_zero_of_y_eq_zero
 assert_axioms CompElliptic.CurveForms.Montgomery.x_add_one_ne_zero
+assert_axioms CompElliptic.CurveForms.Montgomery.equation_variableChange_iff
+assert_axioms CompElliptic.CurveForms.Montgomery.slope_variableChange
+assert_axioms CompElliptic.CurveForms.Montgomery.variableChangeMap_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_add
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.ofMontgomery_toMontgomery
 assert_axioms CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.toMontgomery_ofMontgomery
@@ -88,7 +95,10 @@ assert_axioms CompElliptic.Fields.BLS12_381.bls12_381Scalar
 
 /-! ## The Jubjub curve — standard axioms only
 
-The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin. -/
+The curve's parameters, its order witnesses, and the order and prime-order subgroup they pin; the
+ctEdwards curve, its equivalence with the short-Weierstrass model and the specification's
+conversion maps; and, on the ctEdwards curve, the order, `𝕁⁽ʳ⁾`, the facts about small order and
+the injectivity of `u` on `𝕁⁽ʳ⁾`. -/
 
 assert_axioms CompElliptic.Curves.Jubjub.d_eq
 assert_axioms CompElliptic.Curves.Jubjub.montA_eq
@@ -103,6 +113,26 @@ assert_axioms CompElliptic.Curves.Jubjub.SW.Wpt_witness
 assert_axioms CompElliptic.Curves.Jubjub.SW.card_eq
 assert_axioms CompElliptic.Curves.Jubjub.SW.card_primeOrderSubgroup
 assert_axioms CompElliptic.Curves.Jubjub.SW.eq_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.a_square
+assert_axioms CompElliptic.Curves.Jubjub.d_nonsquare
+assert_axioms CompElliptic.Curves.Jubjub.montScale_sq
+assert_axioms CompElliptic.Curves.Jubjub.montScale_val_le
+assert_axioms CompElliptic.Curves.Jubjub.montgomery_eq_swChange_smul
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_eq_ctEdwardsToMont
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_symm_eq_montToCtEdwards
+assert_axioms CompElliptic.Curves.Jubjub.ctEdwardsToMont_fst_ne
+assert_axioms CompElliptic.Curves.Jubjub.card_eq
+assert_axioms CompElliptic.Curves.Jubjub.card_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.eq_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.swEquiv_mem_primeOrderSubgroup_iff
+assert_axioms CompElliptic.Curves.Jubjub.range_eight_nsmul
+assert_axioms CompElliptic.Curves.Jubjub.card_eight_nsmul_fibre
+assert_axioms CompElliptic.Curves.Jubjub.dvd_addOrderOf_of_eight_nsmul_ne_zero
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_eq_zero_iff_u_eq_zero
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_ne_zeroNegOne
+assert_axioms CompElliptic.Curves.Jubjub.eight_nsmul_u_eq_zero_iff
+assert_axioms CompElliptic.Curves.Jubjub.negV_not_mem_primeOrderSubgroup
+assert_axioms CompElliptic.Curves.Jubjub.u_injOn_primeOrderSubgroup
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
@@ -131,6 +161,9 @@ assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
 check certifies that its maps are compiled code. -/
 
 assert_computable CompElliptic.CurveForms.CtEdwards.CtEdwardsPoint.montgomeryEquiv +choice
+assert_computable CompElliptic.CurveForms.Montgomery.variableChangeEquiv +choice
+assert_computable CompElliptic.CurveForms.ShortWeierstrass.SWPoint.equivPoint +choice
+assert_computable CompElliptic.Curves.Jubjub.swEquiv +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 

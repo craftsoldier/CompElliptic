@@ -527,6 +527,104 @@ theorem coords_nsmul {E : SWCurve F} (n : ℕ) (P : SWPoint E) :
     rw [ih]
     rfl
 
+/-! ### Mathlib's points
+
+`SWPoint E` and Mathlib's affine points of `toW E.A E.B` are additively equivalent
+(`SWPoint.equivPoint`): the identity `(0, 0)` goes to `0` and every other point to its coordinates.
+The map is defined by cases on `P = 0`, so it is computable; it agrees with `toPt`
+(`SWPoint.toPoint_eq_toPt`), whose `toPt_add` makes it additive. -/
+
+/-- The Mathlib point of `P`: `0` for the identity, the same coordinates otherwise. -/
+def SWPoint.toPoint {E : SWCurve F} (P : SWPoint E) : (toW E.A E.B).toAffine.Point :=
+  if h : P = 0 then 0 else .some P.x P.y (nonsingular_toW (onCurve_of_ne_zero h))
+
+/-- The point of `E` with the coordinates of a Mathlib point, and the identity for `0`. -/
+def SWPoint.ofPoint {E : SWCurve F} : (toW E.A E.B).toAffine.Point → SWPoint E
+  | .zero => 0
+  | .some x y h => ⟨x, y, Or.inl (equation_toW.mp h.1)⟩
+
+/-- `toPoint` is `toPt` on the coordinates. -/
+theorem SWPoint.toPoint_eq_toPt {E : SWCurve F} (P : SWPoint E) :
+    P.toPoint = toPt E.A E.B (P.x, P.y) := by
+  unfold toPoint
+  split_ifs with h
+  · subst h; exact (toPt_zero E.B_nonzero).symm
+  · exact (toPt_some (onCurve_of_ne_zero h)).symm
+
+/-- **The additive equivalence** between `SWPoint E` and Mathlib's affine points of
+`toW E.A E.B`. -/
+def SWPoint.equivPoint (E : SWCurve F) : SWPoint E ≃+ (toW E.A E.B).toAffine.Point where
+  toFun := toPoint
+  invFun := ofPoint
+  left_inv := by
+    rintro ⟨x, y, hv⟩
+    rw [toPoint_eq_toPt]
+    rcases hv with hO | h0
+    · show ofPoint (toPt E.A E.B (x, y)) = _
+      rw [toPt_some hO]
+      rfl
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj h0
+      show ofPoint (toPt E.A E.B (0, 0)) = _
+      rw [toPt_zero E.B_nonzero]
+      rfl
+  right_inv := by
+    rintro (_ | ⟨x, y, h⟩)
+    · show toPoint 0 = 0
+      rw [toPoint_eq_toPt]; exact toPt_zero E.B_nonzero
+    · show toPoint ⟨x, y, _⟩ = _
+      rw [toPoint_eq_toPt]; exact toPt_some (equation_toW.mp h.1)
+  map_add' P Q := by
+    simp only [toPoint_eq_toPt]
+    exact toPt_add E.B_nonzero P.onCurve Q.onCurve
+
+omit [DecidableEq F] in
+/-- `ofPoint` on an affine point keeps its coordinates. -/
+theorem SWPoint.ofPoint_some {E : SWCurve F} {x y : F}
+    (h : (toW E.A E.B).toAffine.Nonsingular x y) :
+    (ofPoint (.some x y h) : SWPoint E) = ⟨x, y, Or.inl (equation_toW.mp h.1)⟩ := rfl
+
+/-! ### Distinct `x`-coordinates
+
+The curve fact behind the Distinct-`x` theorem of the Zcash Protocol Specification
+[§A.3.3.4 "Affine-Montgomery
+arithmetic"](https://zips.z.cash/protocol/protocol.pdf#cctmontarithmetic): multiples
+`[k₁] Q`, `[k₂] Q` of a point `Q` of order `s`, with nonzero `k₁`, `k₂` of absolute value at most
+`(s − 1)/2` and `k₂ ≠ ±k₁`, have distinct `x`-coordinates. The specification states it for `Q` of
+odd-prime order on a Montgomery curve, as a theorem about its incomplete addition constraints;
+here it is the curve fact alone, on any short Weierstrass curve, and it needs only the order of
+`Q`. -/
+
+/-- An integer multiple `[k] Q` of a point of order `s` is `0` only if `k = 0`, when `|k| < s`. -/
+theorem SWPoint.zsmul_ne_zero_of_abs_lt {E : SWCurve F} {Q : SWPoint E} {s : ℕ}
+    (hQ : addOrderOf Q = s) {k : ℤ} (hk : k ≠ 0) (hks : |k| < s) : k • Q ≠ 0 := by
+  intro h
+  rw [← hQ] at hks
+  exact hk (Int.eq_zero_of_abs_lt_dvd (addOrderOf_dvd_iff_zsmul_eq_zero.mpr h) hks)
+
+/-- **Distinct `x`.** For `Q` of order `s` and nonzero integers `k₁`, `k₂` with `|kᵢ| ≤ (s − 1)/2`
+and `k₂ ≠ ±k₁`, the points `[k₁] Q` and `[k₂] Q` have distinct `x`-coordinates: points sharing an
+`x` are equal up to sign (`SWPoint.eq_pm_of_x_eq`), and `[k₁] Q = ±[k₂] Q` would make `s` divide
+`k₁ ∓ k₂`, which is nonzero and of absolute value less than `s`. -/
+theorem SWPoint.x_ne_of_addOrderOf {E : SWCurve F} {Q : SWPoint E} {s : ℕ}
+    (hQ : addOrderOf Q = s) {k₁ k₂ : ℤ} (hk₁ : k₁ ≠ 0) (hk₂ : k₂ ≠ 0)
+    (hb₁ : |k₁| ≤ ((s - 1) / 2 : ℕ)) (hb₂ : |k₂| ≤ ((s - 1) / 2 : ℕ)) (hne : k₂ ≠ k₁)
+    (hne' : k₂ ≠ -k₁) : (k₁ • Q).x ≠ (k₂ • Q).x := by
+  -- `k₁ ≠ 0` forces `s ≥ 3`, so two elements of the range sum to less than `s` in absolute
+  -- value.
+  have h1 : (1 : ℤ) ≤ ((s - 1) / 2 : ℕ) := (Int.one_le_abs hk₁).trans hb₁
+  have hs : (((s - 1) / 2 : ℕ) : ℤ) + ((s - 1) / 2 : ℕ) < s := by omega
+  have hb₁' : |k₁| < s := by linarith
+  have hb₂' : |k₂| < s := by linarith
+  intro hx
+  rcases eq_pm_of_x_eq (zsmul_ne_zero_of_abs_lt hQ hk₁ hb₁')
+    (zsmul_ne_zero_of_abs_lt hQ hk₂ hb₂') hx with h | h
+  · have hd : |k₁ - k₂| < s := (abs_sub _ _).trans_lt (by linarith)
+    exact zsmul_ne_zero_of_abs_lt hQ (sub_ne_zero.mpr (Ne.symm hne)) hd
+      (by rw [sub_zsmul, h, add_neg_cancel])
+  · have hd : |k₁ + k₂| < s := (abs_add_le _ _).trans_lt (by linarith)
+    exact zsmul_ne_zero_of_abs_lt hQ (fun e => hne' (by linarith)) hd
+      (by rw [add_zsmul, h, neg_add_cancel])
+
 /-! ### Scalar multiples from a chain of slope certificates
 
 To prove `[n] B = R` for concrete points, supply the slope of each chord and tangent in a
