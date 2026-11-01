@@ -10,6 +10,7 @@ import CompElliptic.CoordinateSystem
 import CompElliptic.Encoding
 import CompElliptic.Encodings.Common
 import CompElliptic.Encodings.Pasta
+import CompElliptic.Encodings.Jubjub
 import CompElliptic.Fields.BLS12_381
 import CompElliptic.Fields.Pasta
 import CompElliptic.Fields.Residue
